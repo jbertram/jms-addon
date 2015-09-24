@@ -74,9 +74,9 @@
 	</modules>
 
     <scm>
-        <url>https://github.com/seedstack/jdbc-addon</url>
-        <connection>scm:git:git://github.com/seedstack/jdbc-addon.git</connection>
-        <developerConnection>scm:git:git@github.com:seedstack/jdbc-addon.git</developerConnection>
+        <url>https://github.com/seedstack/jms-addon</url>
+        <connection>scm:git:git://github.com/seedstack/jms-addon.git</connection>
+        <developerConnection>scm:git:git@github.com:seedstack/jms-addon.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
