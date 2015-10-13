@@ -17,8 +17,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
 import org.seedstack.seed.jms.spi.ConnectionDefinition;
 
 import javax.jms.Connection;
@@ -60,7 +60,7 @@ public class ManagedConnectionTest {
     public void connection_should_be_refreshed_on_failure() throws JMSException, InterruptedException {
         // Initialization
         underTest.start();
-        connection = Whitebox.getInternalState(underTest, "connection");
+        connection = (Connection) Whitebox.getInternalState(underTest, "connection");
         Assertions.assertThat(connection).isNotNull();
         // Mock the created session
         ManagedSession session = Mockito.mock(ManagedSession.class);
@@ -79,7 +79,7 @@ public class ManagedConnectionTest {
         underTest.onException(new JMSException("Connection closed"));
 
         // Reset 
-        connection = Whitebox.getInternalState(underTest, "connection");
+        connection = (Connection) Whitebox.getInternalState(underTest, "connection");
         Assertions.assertThat(connection).isNull();
         Mockito.verify(session, Mockito.times(1)).reset(); // session is reset on cascade
 
@@ -89,7 +89,7 @@ public class ManagedConnectionTest {
         // wait for the timer to refresh the connection
         Thread.sleep(200);
 
-        connection = Whitebox.getInternalState(underTest, "connection"); // connection is back
+        connection = (Connection) Whitebox.getInternalState(underTest, "connection"); // connection is back
         Assertions.assertThat(connection).isNotNull();
         Mockito.verify(session, Mockito.times(1)).refresh(connection); // session is refreshed
     }
@@ -104,9 +104,9 @@ public class ManagedConnectionTest {
             }
         };
         underTest.setExceptionListener(exceptionListener);
-        Connection jmsConnection = Whitebox.getInternalState(underTest, "connection");
+        Connection jmsConnection = (Connection) Whitebox.getInternalState(underTest, "connection");
         javax.jms.ExceptionListener exceptionListenerAQ = jmsConnection.getExceptionListener();
-        javax.jms.ExceptionListener exceptionListenerMC = Whitebox.getInternalState(underTest, "exceptionListener");
+        javax.jms.ExceptionListener exceptionListenerMC = (ExceptionListener) Whitebox.getInternalState(underTest, "exceptionListener");
         Assertions.assertThat(exceptionListenerAQ).isNotEqualTo(exceptionListenerMC);
         Assertions.assertThat(exceptionListenerMC).isEqualTo(exceptionListener);
 

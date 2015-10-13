@@ -16,8 +16,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
 
 import javax.jms.*;
 import java.util.List;
@@ -46,13 +46,13 @@ public class ManagedSessionTest {
     @Test
     public void session_is_reset() throws JMSException {
         // Check the session state
-        Session actualSession = Whitebox.getInternalState(underTest, "session");
+        Session actualSession = (Session) Whitebox.getInternalState(underTest, "session");
         Assertions.assertThat(actualSession).isNotNull();
 
         // Create two consumers
         underTest.createConsumer(destination);
         underTest.createConsumer(destination);
-        List<ManagedMessageConsumer> managedMessageConsumers = Whitebox.getInternalState(underTest, "managedMessageConsumers");
+        List<ManagedMessageConsumer> managedMessageConsumers = (List<ManagedMessageConsumer>) Whitebox.getInternalState(underTest, "managedMessageConsumers");
         Assertions.assertThat(managedMessageConsumers).hasSize(2);
 
         // Mock the message consumers
@@ -62,7 +62,7 @@ public class ManagedSessionTest {
 
         // reset the connection and the message consumers on cascade
         underTest.reset();
-        actualSession = Whitebox.getInternalState(underTest, "session");
+        actualSession = (Session) Whitebox.getInternalState(underTest, "session");
         Assertions.assertThat(actualSession).isNull();
         Mockito.verify(messageConsumer1, Mockito.times(1)).reset();
         Mockito.verify(messageConsumer2, Mockito.times(1)).reset();
@@ -85,7 +85,7 @@ public class ManagedSessionTest {
 
         // refresh session
         underTest.refresh(connection);
-        Session actualSession = Whitebox.getInternalState(underTest, "session");
+        Session actualSession = (Session) Whitebox.getInternalState(underTest, "session");
         Assertions.assertThat(actualSession).isNotNull();
 
         // refresh consumers on cascade

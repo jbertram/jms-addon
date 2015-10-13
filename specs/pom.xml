@@ -13,12 +13,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.seedstack</groupId>
-        <artifactId>seed-jms</artifactId>
-        <version>2.0.1-SNAPSHOT</version>
+        <groupId>org.seedstack.addons</groupId>
+        <artifactId>jms</artifactId>
+        <version>2.1.0-M1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>seed-jms-specs</artifactId>
+    <artifactId>jms-specs</artifactId>
 
     <properties>
         <compatibility.artifactId>seed-jms-support-specs</compatibility.artifactId>
@@ -33,7 +33,7 @@
         </dependency>
         <dependency>
             <groupId>org.seedstack.seed</groupId>
-            <artifactId>seed-transaction-support</artifactId>
+            <artifactId>seed-transaction</artifactId>
             <version>${seed.version}</version>
         </dependency>
     </dependencies>

@@ -13,7 +13,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.seedstack.seed.core.api.Logging;
 import org.seedstack.seed.it.SeedITRunner;
 import org.seedstack.seed.jms.fixtures.TestExceptionListener;
@@ -97,7 +97,7 @@ public class JmsRefreshIT {
 
     @Test
     public void connection_failed_multiple_times_then_reconnect() throws InterruptedException, JMSException {
-        JmsFactory connectionFactory = Whitebox.getInternalState(connection3, "jmsFactoryImpl");
+        JmsFactory connectionFactory = (JmsFactory) Whitebox.getInternalState(connection3, "jmsFactoryImpl");
         Whitebox.setInternalState(connection3, "jmsFactoryImpl", new FakeConnectionFactoryImpl());
 
         connection3.close();

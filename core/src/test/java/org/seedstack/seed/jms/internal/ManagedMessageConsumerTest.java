@@ -14,8 +14,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
 
 import javax.jms.*;
 
@@ -46,19 +46,19 @@ public class ManagedMessageConsumerTest {
 
     @Test
     public void messageConsumer_is_reset_then_refreshed() throws JMSException {
-        MessageConsumer actualMessageConsumer = Whitebox.getInternalState(underTest, "messageConsumer");
+        MessageConsumer actualMessageConsumer = (MessageConsumer) Whitebox.getInternalState(underTest, "messageConsumer");
         Assertions.assertThat(actualMessageConsumer).isEqualTo(messageConsumer);
         underTest.setMessageListener(messageListener);
 
         // Reset message consumer
         underTest.reset();
 
-        actualMessageConsumer = Whitebox.getInternalState(underTest, "messageConsumer");
+        actualMessageConsumer = (MessageConsumer) Whitebox.getInternalState(underTest, "messageConsumer");
         Assertions.assertThat(actualMessageConsumer).isNull();
 
         // Refresh message consumer and the message listeners on cascade
         underTest.refresh(session);
-        actualMessageConsumer = Whitebox.getInternalState(underTest, "messageConsumer");
+        actualMessageConsumer = (MessageConsumer) Whitebox.getInternalState(underTest, "messageConsumer");
         Assertions.assertThat(actualMessageConsumer).isNotNull();
 
         // method call at the init and then at the refresh

@@ -9,21 +9,23 @@
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.seedstack</groupId>
-        <artifactId>parent</artifactId>
-        <version>2.0.1-SNAPSHOT</version>
+        <artifactId>parent-internal</artifactId>
+        <version>2.1.0-SNAPSHOT</version>
     </parent>
 
-	<artifactId>seed-jms</artifactId>
-    <version>2.0.1-SNAPSHOT</version>
-	<packaging>pom</packaging>
+    <groupId>org.seedstack.addons</groupId>
+    <artifactId>jms</artifactId>
+    <version>2.1.0-M1-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
     <properties>
-        <seed.version>2.0.0</seed.version>
+        <seed.version>2.1.0-M1-SNAPSHOT</seed.version>
 
         <compatibility.groupId>org.seedstack.seed</compatibility.groupId>
         <compatibility.version>2.0.0</compatibility.version>
@@ -39,12 +41,11 @@
                         <includedLicenses>
                             <includedLicense>Apache 2</includedLicense>
                             <includedLicense>BSD</includedLicense>
-                            <includedLicense>EPL 1.0</includedLicense>
-                            <includedLicense>LGPL 2.1</includedLicense>
+                            <!--<includedLicense>EPL 1.0</includedLicense>-->
+                            <!--<includedLicense>LGPL 2.1</includedLicense>-->
                             <includedLicense>LGPL 3.0</includedLicense>
                             <includedLicense>MIT License</includedLicense>
                             <includedLicense>MPL 2.0</includedLicense>
-                            <includedLicense>The JSON License</includedLicense>
                             <includedLicense>Public Domain</includedLicense>
                             <includedLicense>WTFPL</includedLicense>
 
@@ -56,8 +57,8 @@
                             <licenseMerge>Apache 2|The Apache Software License, Version 2.0</licenseMerge>
                             <licenseMerge>Apache 2|Apache License 2.0</licenseMerge>
                             <licenseMerge>BSD|The New BSD License</licenseMerge>
-                            <licenseMerge>EPL 1.0|Eclipse Public License, Version 1.0</licenseMerge>
-                            <licenseMerge>LGPL 2.1|GNU Lesser General Public License, Version 2.1</licenseMerge>
+                            <!--<licenseMerge>EPL 1.0|Eclipse Public License, Version 1.0</licenseMerge>-->
+                            <!--<licenseMerge>LGPL 2.1|GNU Lesser General Public License, Version 2.1</licenseMerge>-->
                             <licenseMerge>LGPL 3.0|GNU Lesser Public License</licenseMerge>
                             <licenseMerge>IGNORED_LICENSE|MPL 1.1</licenseMerge>
                             <licenseMerge>IGNORED_LICENSE|LGPL 2.1</licenseMerge>
@@ -69,9 +70,9 @@
     </build>
 
     <modules>
-		<module>specs</module>
-		<module>core</module>
-	</modules>
+        <module>specs</module>
+        <module>core</module>
+    </modules>
 
     <scm>
         <url>https://github.com/seedstack/jms-addon</url>
