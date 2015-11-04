@@ -17,7 +17,7 @@ import org.seedstack.seed.jms.spi.JmsFactory;
 import org.seedstack.seed.jms.spi.MessageListenerDefinition;
 import org.seedstack.seed.jms.spi.MessageListenerInstanceDefinition;
 import org.seedstack.seed.jms.spi.MessagePoller;
-import org.seedstack.seed.transaction.utils.TransactionalProxy;
+import org.seedstack.seed.transaction.spi.TransactionalProxy;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;

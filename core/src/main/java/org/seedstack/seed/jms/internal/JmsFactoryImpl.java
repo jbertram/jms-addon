@@ -10,7 +10,7 @@ package org.seedstack.seed.jms.internal;
 import io.nuun.kernel.api.plugin.PluginException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
-import org.seedstack.seed.core.api.SeedException;
+import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.utils.SeedBeanUtils;
 import org.seedstack.seed.jms.spi.ConnectionDefinition;
 import org.seedstack.seed.jms.spi.JmsErrorCodes;

@@ -7,12 +7,12 @@
  */
 package org.seedstack.seed.jms.fixtures;
 
-import org.seedstack.seed.core.api.Logging;
-import org.seedstack.seed.it.api.ITBind;
+import org.seedstack.seed.Logging;
+import org.seedstack.seed.it.ITBind;
 import org.seedstack.seed.jms.JmsBaseIT;
 import org.seedstack.seed.jms.api.DestinationType;
 import org.seedstack.seed.jms.api.JmsMessageListener;
-import org.seedstack.seed.transaction.api.Transactional;
+import org.seedstack.seed.transaction.Transactional;
 import org.slf4j.Logger;
 
 import javax.jms.JMSException;

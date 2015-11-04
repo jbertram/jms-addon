@@ -7,7 +7,7 @@
  */
 package org.seedstack.seed.jms.internal;
 
-import org.seedstack.seed.core.api.SeedException;
+import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.utils.SeedCheckUtils;
 import org.seedstack.seed.jms.spi.JmsErrorCodes;
 import org.slf4j.Logger;

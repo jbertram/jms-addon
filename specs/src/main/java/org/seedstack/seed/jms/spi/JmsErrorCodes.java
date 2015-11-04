@@ -7,7 +7,7 @@
  */
 package org.seedstack.seed.jms.spi;
 
-import org.seedstack.seed.core.api.ErrorCode;
+import org.seedstack.seed.ErrorCode;
 
 /**
  * JMS error codes.

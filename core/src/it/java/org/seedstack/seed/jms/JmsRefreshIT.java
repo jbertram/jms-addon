@@ -12,7 +12,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.internal.util.reflection.Whitebox;
-import org.seedstack.seed.core.api.Logging;
+import org.seedstack.seed.Logging;
 import org.seedstack.seed.it.SeedITRunner;
 import org.seedstack.seed.jms.fixtures.TestExceptionListener;
 import org.seedstack.seed.jms.fixtures.TestSender3;

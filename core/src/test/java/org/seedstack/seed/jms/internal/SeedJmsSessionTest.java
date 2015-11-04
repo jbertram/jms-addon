@@ -7,7 +7,7 @@
  */
 package org.seedstack.seed.jms.internal;
 
-import org.seedstack.seed.transaction.utils.TransactionalProxy;
+import org.seedstack.seed.transaction.spi.TransactionalProxy;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;

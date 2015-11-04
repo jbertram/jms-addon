@@ -7,7 +7,7 @@
  */
 package org.seedstack.seed.jms.internal;
 
-import org.seedstack.seed.core.api.Application;
+import org.seedstack.seed.Application;
 import org.seedstack.seed.core.internal.application.ApplicationPlugin;
 import org.seedstack.seed.core.internal.jndi.JndiPlugin;
 import org.seedstack.seed.transaction.internal.TransactionPlugin;

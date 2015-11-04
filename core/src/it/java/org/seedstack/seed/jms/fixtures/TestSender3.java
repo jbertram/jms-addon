@@ -7,9 +7,9 @@
  */
 package org.seedstack.seed.jms.fixtures;
 
-import org.seedstack.seed.it.api.ITBind;
+import org.seedstack.seed.it.ITBind;
 import org.seedstack.seed.jms.api.JmsConnection;
-import org.seedstack.seed.transaction.api.Transactional;
+import org.seedstack.seed.transaction.Transactional;
 
 import javax.inject.Inject;
 import javax.jms.*;
