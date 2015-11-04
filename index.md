@@ -19,12 +19,7 @@ and session try to reconnect automatically after a JMS connection failure.
 JMS provider implementation is not provided by this add-on and must be configured depending on your messaging solution.
 {{% /callout %}}
 
-To enable JMS add-on in your application, use the following dependency snippet:
-
-    <dependency>
-        <groupId>org.seedstack.addons</groupId>
-        <artifactId>jms-core</artifactId>
-    </dependency>
+{{< dependency "org.seedstack.addons" "jms-core" >}}
 
 The JMS specification jar dependency is required as well since Seed JMS support doesn't transitively provide this 
 dependency:

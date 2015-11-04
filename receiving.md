@@ -19,11 +19,11 @@ annotated with `@JMSMessageListner`. This annotation takes the following paramet
 
 When a `poller` parameter is specified, no asynchronous message reception (driven by the JMS provider after a 
 setMessageListener() call) takes place. Polling behavior is delegated to the specified class (which must implement
-`org.seedstack.seed.jms.spi.MessagePoller`).
+`org.seedstack.jms.spi.MessagePoller`).
 
 ## Simple message poller
 
-If polling is needed on a particular listener you may use the `org.seedstack.seed.jms.SimpleMessagePoller` class for 
+If polling is needed on a particular listener you may use the `org.seedstack.jms.SimpleMessagePoller` class for
 basic polling needs. It spawns a thread which calls to `receive()` in a loop, dispatching the message to the 
 `onMessage()` method when a message is received. If an exception occurs during `receive()`, the exception is dispatched
 to the connection exception listener if any.
