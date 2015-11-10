@@ -7,7 +7,7 @@
  */
 package org.seedstack.jms.internal;
 
-import io.nuun.kernel.api.Plugin;
+import com.google.common.collect.Lists;
 import io.nuun.kernel.api.plugin.InitState;
 import io.nuun.kernel.api.plugin.context.InitContext;
 import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
@@ -17,30 +17,18 @@ import org.apache.commons.lang.StringUtils;
 import org.kametic.specifications.Specification;
 import org.seedstack.jms.DestinationType;
 import org.seedstack.jms.JmsMessageListener;
-import org.seedstack.jms.spi.MessageListenerDefinition;
+import org.seedstack.jms.spi.*;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.application.ApplicationPlugin;
 import org.seedstack.seed.core.internal.jndi.JndiPlugin;
 import org.seedstack.seed.core.utils.SeedCheckUtils;
-import org.seedstack.jms.spi.ConnectionDefinition;
-import org.seedstack.jms.spi.JmsExceptionHandler;
-import org.seedstack.jms.spi.JmsFactory;
-import org.seedstack.jms.spi.MessagePoller;
 import org.seedstack.seed.transaction.internal.TransactionPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.Session;
+import javax.jms.*;
 import javax.naming.Context;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,7 +67,6 @@ public class JmsPlugin extends AbstractPlugin {
     private Application application;
     private Configuration jmsConfiguration;
     private TransactionPlugin transactionPlugin;
-    private Map<String, Context> jndiContexts;
 
     @Override
     public String name() {
@@ -88,28 +75,12 @@ public class JmsPlugin extends AbstractPlugin {
 
     @Override
     public InitState init(InitContext initContext) {
-        String applicationId = null;
-        transactionPlugin = null;
-        for (Plugin plugin : initContext.pluginsRequired()) {
-            if (plugin instanceof ApplicationPlugin) {
-                application = ((ApplicationPlugin) plugin).getApplication();
-                jmsConfiguration = application.getConfiguration().subset(JmsPlugin.JMS_PLUGIN_CONFIGURATION_PREFIX);
-                applicationId = ((ApplicationPlugin) plugin).getApplication().getId();
-            } else if (plugin instanceof TransactionPlugin) {
-                transactionPlugin = ((TransactionPlugin) plugin);
-            } else if (plugin instanceof JndiPlugin) {
-                jndiContexts = ((JndiPlugin) plugin).getJndiContexts();
-            }
-        }
+        transactionPlugin = initContext.dependency(TransactionPlugin.class);
+        application = initContext.dependency(ApplicationPlugin.class).getApplication();
+        jmsConfiguration = application.getConfiguration().subset(JmsPlugin.JMS_PLUGIN_CONFIGURATION_PREFIX);
+        Map<String, Context> jndiContexts = initContext.dependency(JndiPlugin.class).getJndiContexts();
 
-        if (jmsConfiguration == null || applicationId == null) {
-            throw SeedException.createNew(JmsErrorCodes.PLUGIN_NOT_FOUND).put("plugin", "application");
-        }
-        if (transactionPlugin == null) {
-            throw SeedException.createNew(JmsErrorCodes.PLUGIN_NOT_FOUND).put("plugin", "transaction");
-        }
-
-        jmsFactory = new JmsFactoryImpl(applicationId, jmsConfiguration, jndiContexts);
+        jmsFactory = new JmsFactoryImpl(application.getId(), jmsConfiguration, jndiContexts);
 
         configureConnections(jmsConfiguration.getStringArray("connections"));
 
@@ -153,12 +124,8 @@ public class JmsPlugin extends AbstractPlugin {
     }
 
     @Override
-    public Collection<Class<? extends Plugin>> requiredPlugins() {
-        Collection<Class<? extends Plugin>> plugins = new ArrayList<Class<? extends Plugin>>();
-        plugins.add(ApplicationPlugin.class);
-        plugins.add(TransactionPlugin.class);
-        plugins.add(JndiPlugin.class);
-        return plugins;
+    public Collection<Class<?>> requiredPlugins() {
+        return Lists.<Class<?>>newArrayList(ApplicationPlugin.class, TransactionPlugin.class, JndiPlugin.class);
     }
 
     @Override
@@ -181,15 +148,11 @@ public class JmsPlugin extends AbstractPlugin {
         );
     }
 
-    @SuppressWarnings("unchecked")
     private void configureConnections(String[] connectionNames) {
         for (String connectionName : connectionNames) {
             try {
-                ConnectionDefinition connectionDefinition = jmsFactory.createConnectionDefinition(
-                        connectionName,
-                        jmsConfiguration.subset("connection." + connectionName),
-                        null
-                );
+                Configuration connectionConfig = jmsConfiguration.subset("connection." + connectionName);
+                ConnectionDefinition connectionDefinition = jmsFactory.createConnectionDefinition(connectionName, connectionConfig, null);
 
                 registerConnection(jmsFactory.createConnection(connectionDefinition), connectionDefinition);
             } catch (JMSException e) {
@@ -198,10 +161,10 @@ public class JmsPlugin extends AbstractPlugin {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void configureMessageListeners(Collection<Class<?>> listenerCandidates) {
         for (Class<?> candidate : listenerCandidates) {
             if (MessageListener.class.isAssignableFrom(candidate)) {
+                //noinspection unchecked
                 Class<? extends MessageListener> messageListenerClass = (Class<? extends MessageListener>) candidate;
                 String messageListenerName = messageListenerClass.getCanonicalName();
                 JmsMessageListener annotation = messageListenerClass.getAnnotation(JmsMessageListener.class);

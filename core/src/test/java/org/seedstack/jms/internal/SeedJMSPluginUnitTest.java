@@ -7,11 +7,6 @@
  */
 package org.seedstack.jms.internal;
 
-import org.seedstack.seed.Application;
-import org.seedstack.seed.core.internal.application.ApplicationPlugin;
-import org.seedstack.seed.core.internal.jndi.JndiPlugin;
-import org.seedstack.seed.transaction.internal.TransactionPlugin;
-import io.nuun.kernel.api.Plugin;
 import io.nuun.kernel.api.plugin.context.InitContext;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -20,9 +15,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kametic.specifications.Specification;
 import org.mockito.Mockito;
+import org.seedstack.seed.Application;
+import org.seedstack.seed.core.internal.application.ApplicationPlugin;
+import org.seedstack.seed.core.internal.jndi.JndiPlugin;
+import org.seedstack.seed.transaction.internal.TransactionPlugin;
 
 import javax.naming.Context;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +39,6 @@ public class SeedJMSPluginUnitTest {
         underTest = new JmsPlugin();
         conf.addProperty("org.seedstack.jms.connectionFactory.default.class", "org.apache.activemq.ActiveMQConnectionFactory");
         conf.addProperty("org.seedstack.jms.connectionFactory.default.url", "vm://localhost?broker.persistent=false");
-
     }
 
     @Test
@@ -63,11 +60,7 @@ public class SeedJMSPluginUnitTest {
 
     @Test
     public void testRequiredPlugins() {
-        Collection<Class<? extends Plugin>> actual = underTest.requiredPlugins();
-        assertThat(actual).isNotEmpty();
-        assertThat(actual.size()).isEqualTo(3);
-        assertThat(actual.contains(ApplicationPlugin.class)).isEqualTo(true);
-        assertThat(actual.contains(TransactionPlugin.class)).isEqualTo(true);
+        assertThat(underTest.requiredPlugins()).containsOnly(ApplicationPlugin.class, TransactionPlugin.class, JndiPlugin.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -84,14 +77,12 @@ public class SeedJMSPluginUnitTest {
         JndiPlugin jndiplugin = mock(JndiPlugin.class);
         when(jndiplugin.getJndiContexts()).thenReturn(new HashMap<String, Context>());
 
-        Collection pluginsRequired = new ArrayList<Plugin>();
-        pluginsRequired.add(confPlugin);
-        pluginsRequired.add(txplugin);
-        pluginsRequired.add(jndiplugin);
-
         HashMap<Specification, Collection<Class<?>>> map = mock(HashMap.class);
 
-        when(initContext.pluginsRequired()).thenReturn(pluginsRequired);
+        when(initContext.dependency(ApplicationPlugin.class)).thenReturn(confPlugin);
+        when(initContext.dependency(TransactionPlugin.class)).thenReturn(txplugin);
+        when(initContext.dependency(JndiPlugin.class)).thenReturn(jndiplugin);
+        
         when(initContext.scannedTypesBySpecification()).thenReturn(map);
 
         when(map.get(Mockito.any(Specification.class))).thenReturn(Collections.EMPTY_LIST);
