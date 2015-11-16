@@ -4,7 +4,8 @@ addon: "JMS"
 repo: "https://github.com/seedstack/jms-addon"
 author: "SeedStack"
 description: "Provides configuration, injection and connection resilience for Java Messaging System 1.1."
-min-version: "15.7+"
+min-version: "15.11+"
+backend: true
 menu:
     AddonJMS:
         weight: 10
