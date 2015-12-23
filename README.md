@@ -1,6 +1,6 @@
 # SeedStack JMS add-on
 
-[![Build status](https://travis-ci.org/seedstack/jms-addon.svg?branch=master)](https://travis-ci.org/seedstack/jms-addon) [![Coverage Status](https://coveralls.io/repos/seedstack/jms-addon/badge.svg?branch=master)](https://coveralls.io/r/seedstack/jms-addon?branch=master) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.seedstack/seed-jms/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/org.seedstack/seed-jms)
+[![Build status](https://travis-ci.org/seedstack/jms-addon.svg?branch=master)](https://travis-ci.org/seedstack/jms-addon) [![Coverage Status](https://coveralls.io/repos/seedstack/jms-addon/badge.svg?branch=master)](https://coveralls.io/r/seedstack/jms-addon?branch=master) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.seedstack.addons.jms/jms/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/org.seedstack.addons.jms/jms)
 
 Official JMS integration for SeedStack.
 
