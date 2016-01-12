@@ -20,7 +20,7 @@ import org.seedstack.seed.transaction.spi.TransactionMetadataResolver;
 /**
  * This {@link org.seedstack.seed.transaction.spi.TransactionMetadataResolver}
  * resolves metadata for transactions marked with
- * {@link org.seedstack.seed.jms.api.JmsConnection} or for the method
+ * {@link org.seedstack.jms.JmsConnection} or for the method
  * {@link MessageListener#onMessage(javax.jms.Message)}.
  *
  * @author adrien.lauer@mpsa.com
