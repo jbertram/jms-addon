@@ -26,6 +26,8 @@
         <seed.version>2.2.0-SNAPSHOT</seed.version>
 
         <compatibility.version>2.1.0</compatibility.version>
+
+        <bintray.package>jms-addon</bintray.package>
     </properties>
 
     <build>
