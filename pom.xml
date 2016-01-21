@@ -23,7 +23,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <seed.version>2.2.0-SNAPSHOT</seed.version>
+        <seed.version>2.2.0</seed.version>
 
         <compatibility.version>2.1.0</compatibility.version>
 
