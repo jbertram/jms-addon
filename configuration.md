@@ -1,7 +1,14 @@
 ---
 title: "Configuration"
-addon: "JMS"
+name: "JMS"
 repo: "https://github.com/seedstack/jms-addon"
+tags:
+    - "jms"
+    - "messaging"
+    - "connection"
+    - "message"
+zones:
+    - Addons
 menu:
     AddonJMS:
         weight: 20

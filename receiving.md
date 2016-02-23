@@ -1,7 +1,15 @@
 ---
 title: "Receiving messages"
-addon: "JMS"
+name: "JMS"
 repo: "https://github.com/seedstack/jms-addon"
+tags:
+    - "receiving"
+    - "message"
+    - "jms"
+    - "polling"
+    - "listener"
+zones:
+    - Addons
 menu:
     AddonJMS:
         weight: 40

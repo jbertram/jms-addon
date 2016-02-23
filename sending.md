@@ -1,7 +1,14 @@
 ---
 title: "Sending messages"
-addon: "JMS"
+name: "JMS"
 repo: "https://github.com/seedstack/jms-addon"
+tags:
+    - "jms"
+    - "message"
+    - "sending"
+    - "transaction"
+zones:
+    - Addons
 menu:
     AddonJMS:
         weight: 30

@@ -1,11 +1,14 @@
 ---
-title: "Overview"
-addon: "JMS"
+title: "Basics"
+name: "JMS"
 repo: "https://github.com/seedstack/jms-addon"
 author: "SeedStack"
 description: "Provides configuration, injection and connection resilience for Java Messaging System 1.1."
 min-version: "15.11+"
 backend: true
+weight: -1
+zones:
+    - Addons
 menu:
     AddonJMS:
         weight: 10
