@@ -1,3 +1,7 @@
+# Version 2.1.2 (?)
+
+* [chg] Update for SeedStack 16.4
+
 # Version 2.1.1 (2016-01-21)
 
 * [fix] Error message were referencing outdated information.
