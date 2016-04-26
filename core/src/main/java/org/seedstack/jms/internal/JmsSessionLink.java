@@ -45,6 +45,11 @@ class JmsSessionLink implements TransactionalLink<Session> {
     }
 
     Session pop() {
-        return sessionThreadLocal.get().pop();
+        Deque<Session> sessions = sessionThreadLocal.get();
+        Session session = sessions.pop();
+        if (sessions.isEmpty()) {
+            sessionThreadLocal.remove();
+        }
+        return session;
     }
 }
