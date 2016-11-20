@@ -1,3 +1,7 @@
+# Version 3.0.0 (2016-11-?)
+
+* [chg] Transformed into a single module add-on. 
+
 # Version 2.1.2 (2016-04-26)
 
 * [chg] Update for SeedStack 16.4.

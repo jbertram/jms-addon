@@ -19,13 +19,12 @@
 
     <groupId>org.seedstack.addons.jms</groupId>
     <artifactId>jms</artifactId>
-    <version>2.1.2-SNAPSHOT</version>
-    <packaging>pom</packaging>
+    <version>3.0.0-SNAPSHOT</version>
 
     <properties>
         <seed.version>2.3.0</seed.version>
 
-        <compatibility.version>2.1.0</compatibility.version>
+        <compatibility.skip>true</compatibility.skip>
 
         <bintray.package>jms-addon</bintray.package>
     </properties>
@@ -66,10 +65,55 @@
         </pluginManagement>
     </build>
 
-    <modules>
-        <module>specs</module>
-        <module>core</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.seedstack.seed</groupId>
+            <artifactId>seed-core</artifactId>
+            <version>${seed.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.seedstack.seed</groupId>
+            <artifactId>seed-transaction</artifactId>
+            <version>${seed.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>jms-api</artifactId>
+            <version>1.1-rev-1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.seedstack.seed</groupId>
+            <artifactId>seed-testing</artifactId>
+            <version>${seed.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.easytesting</groupId>
+            <artifactId>fest-reflect</artifactId>
+            <version>${fest-reflect.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-core</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <scm>
         <url>https://github.com/seedstack/jms-addon</url>
