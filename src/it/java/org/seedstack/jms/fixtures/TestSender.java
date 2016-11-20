@@ -9,11 +9,6 @@ package org.seedstack.jms.fixtures;
 
 import javax.jms.JMSException;
 
-/**
- * Just used for test purpose.
- *
- * @author pierre.thirouin@ext.mpsa.com
- */
 public interface TestSender {
     void send(String stringMessage) throws JMSException;
 }

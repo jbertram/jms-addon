@@ -20,10 +20,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import javax.jms.*;
 import java.util.List;
 
-/**
- * @author pierre.thirouin@ext.mpsa.com
- *         12/11/2014
- */
 @RunWith(MockitoJUnitRunner.class)
 public class ManagedSessionTest {
 

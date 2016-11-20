@@ -21,7 +21,7 @@ class JmsSessionLink implements TransactionalLink<Session> {
         sessionThreadLocal = new ThreadLocal<Deque<Session>>() {
             @Override
             protected Deque<Session> initialValue() {
-                return new ArrayDeque<Session>();
+                return new ArrayDeque<>();
             }
         };
     }

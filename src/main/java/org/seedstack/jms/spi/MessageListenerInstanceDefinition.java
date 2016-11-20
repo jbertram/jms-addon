@@ -12,7 +12,7 @@ import javax.jms.MessageListener;
 import javax.jms.Session;
 
 /**
- * @author adrien.lauer@mpsa.com
+ * This class holds all information to dynamically register a JMS listener by instance.
  */
 public class MessageListenerInstanceDefinition extends MessageListenerDefinition {
     private final MessageListener messageListener;

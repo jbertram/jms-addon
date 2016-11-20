@@ -23,9 +23,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * This session is a facade of a jms messageConsumer. It allows the reconnection mechanism.
- *
- * @author pierre.thirouin@ext.mpsa.com
- *         06/11/2014
  */
 class ManagedMessageConsumer implements MessageConsumer {
     private static final Logger logger = LoggerFactory.getLogger(ManagedMessageConsumer.class);
@@ -67,7 +64,7 @@ class ManagedMessageConsumer implements MessageConsumer {
                 messageConsumer.setMessageListener(messageListener);
             }
         } catch (JMSException e) {
-            throw SeedException.wrap(e, JmsErrorCodes.INITIALIZATION_EXCEPTION);
+            throw SeedException.wrap(e, JmsErrorCode.INITIALIZATION_EXCEPTION);
         } finally {
             messageConsumerLock.writeLock().unlock();
         }

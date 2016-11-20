@@ -19,12 +19,6 @@ import org.mockito.Mockito;
 import org.seedstack.jms.JmsConnection;
 import org.seedstack.seed.transaction.spi.TransactionMetadata;
 
-/**
- * Unit test for {@link JmsTransactionMetadataResolver}
- * 
- * @author thierry.bouvet@mpsa.com
- *
- */
 public class JmsTransactionMetadataResolverTest {
 
     class NotAJmsListener {

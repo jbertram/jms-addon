@@ -7,7 +7,5 @@
  */
 /**
  * Provides classes for extending the Seed JMS capabilities.
- *
- * @author Pierre Thirouin
  */
 package org.seedstack.jms.spi;

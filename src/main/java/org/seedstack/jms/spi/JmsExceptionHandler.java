@@ -14,9 +14,6 @@ import javax.jms.Session;
 
 /**
  * Exception handler for JMS transactions.
- *
- * @author emmanuel.vinel@mpsa.com
- * @author adrien.lauer@mpsa.com
  */
 public interface JmsExceptionHandler extends ExceptionHandler<Session> {
 

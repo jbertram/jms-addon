@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
+jms:
+  connectionFactories:
+    connectionFactory1:
+      vendorClass: org.apache.activemq.ActiveMQConnectionFactory
+      vendorProperties:
+        brokerURL: vm://localhost?broker.persistent=false
+    connectionFactory2:
+      vendorClass: org.apache.activemq.ActiveMQConnectionFactory
+      vendorProperties:
+        brokerURL: vm://localhost?broker.persistent=false
+    connectionFactory3:
+      vendorClass: org.apache.activemq.ActiveMQConnectionFactory
+      vendorProperties:
+        brokerURL: vm://localhost?broker.persistent=false
+    connectionFactory4:
+      vendorClass: org.apache.activemq.ActiveMQConnectionFactory
+      vendorProperties:
+        brokerURL: vm://localhost?broker.persistent=false
+  connections:
+    connection1:
+      connectionFactory: connectionFactory1
+      reconnectionDelay: 50
+    connection2:
+      connectionFactory: connectionFactory2
+      reconnectionDelay: 50
+    connection3:
+      connectionFactory: connectionFactory3
+      reconnectionDelay: 50
+      exceptionListener: org.seedstack.jms.fixtures.TestExceptionListener
+    connection4:
+      connectionFactory: connectionFactory4
+      jeeMode: true
+
+test:
+  dest1:
+    name: queue1
+    type: QUEUE

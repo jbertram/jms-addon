@@ -17,7 +17,7 @@ import org.seedstack.jms.spi.MessageListenerDefinition;
 import org.seedstack.jms.spi.MessageListenerInstanceDefinition;
 import org.seedstack.jms.spi.JmsFactory;
 import org.seedstack.jms.spi.MessagePoller;
-import org.seedstack.seed.transaction.spi.TransactionalProxy;
+import org.seedstack.seed.core.internal.transaction.TransactionalProxy;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
@@ -89,7 +89,7 @@ class JmsModule extends AbstractModule {
         if (jmsExceptionHandlerClass != null) {
             bind(JmsExceptionHandler.class).annotatedWith(Names.named(name)).to(jmsExceptionHandlerClass);
         } else {
-            bind(JmsExceptionHandler.class).annotatedWith(Names.named(name)).toProvider(Providers.<JmsExceptionHandler>of(null));
+            bind(JmsExceptionHandler.class).annotatedWith(Names.named(name)).toProvider(Providers.of(null));
         }
 
         if (connectionDefinition.getExceptionListenerClass() != null) {

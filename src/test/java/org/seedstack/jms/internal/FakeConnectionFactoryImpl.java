@@ -7,20 +7,16 @@
  */
 package org.seedstack.jms.internal;
 
-import org.apache.commons.configuration.BaseConfiguration;
+import org.seedstack.jms.JmsConfig;
 import org.seedstack.jms.spi.ConnectionDefinition;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
-import javax.naming.Context;
 import java.util.HashMap;
 
-/**
- * @author pierre.thirouin@ext.mpsa.com
- */
 public class FakeConnectionFactoryImpl extends JmsFactoryImpl {
     public FakeConnectionFactoryImpl() {
-        super("test", new BaseConfiguration(), new HashMap<String, Context>());
+        super("test", new JmsConfig(), new HashMap<>());
     }
 
     @Override

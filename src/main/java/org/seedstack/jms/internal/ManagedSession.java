@@ -20,9 +20,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * This session is a facade of a jms session. It allows the reconnection mechanism.
- *
- * @author pierre.thirouin@ext.mpsa.com
- *         06/11/2014
  */
 class ManagedSession implements Session {
 
@@ -36,7 +33,7 @@ class ManagedSession implements Session {
     
     private final boolean polling;
 
-    private List<ManagedMessageConsumer> managedMessageConsumers = new ArrayList<ManagedMessageConsumer>();
+    private List<ManagedMessageConsumer> managedMessageConsumers = new ArrayList<>();
 
     private ReentrantReadWriteLock sessionLock = new ReentrantReadWriteLock();
 
