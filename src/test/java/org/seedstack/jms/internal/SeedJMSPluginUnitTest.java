@@ -8,19 +8,18 @@
 package org.seedstack.jms.internal;
 
 import io.nuun.kernel.api.plugin.context.InitContext;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.kametic.specifications.Specification;
 import org.mockito.Mockito;
+import org.seedstack.coffig.Coffig;
+import org.seedstack.jms.JmsConfig;
 import org.seedstack.seed.Application;
-import org.seedstack.seed.core.internal.application.ApplicationPlugin;
 import org.seedstack.seed.core.internal.jndi.JndiPlugin;
-import org.seedstack.seed.transaction.internal.TransactionPlugin;
+import org.seedstack.seed.core.internal.transaction.TransactionPlugin;
+import org.seedstack.seed.spi.config.ApplicationProvider;
 
-import javax.naming.Context;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,15 +29,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SeedJMSPluginUnitTest {
-
-    JmsPlugin underTest;
-    Configuration conf = new PropertiesConfiguration();
+    private JmsPlugin underTest = new JmsPlugin();
+    private JmsConfig conf = new JmsConfig();
 
     @Before
     public void setUp() throws Exception {
-        underTest = new JmsPlugin();
-        conf.addProperty("org.seedstack.jms.connectionFactory.default.class", "org.apache.activemq.ActiveMQConnectionFactory");
-        conf.addProperty("org.seedstack.jms.connectionFactory.default.url", "vm://localhost?broker.persistent=false");
+        conf.addConnectionFactory("default", new JmsConfig.ConnectionFactoryConfig()
+                .setVendorClass(ActiveMQConnectionFactory.class)
+                .setVendorProperty("brokerURL", "vm://localhost?broker.persistent=false")
+        );
     }
 
     @Test
@@ -47,42 +46,44 @@ public class SeedJMSPluginUnitTest {
     }
 
     @Test
-    public void testInit() throws ConfigurationException {
-        underTest.init(buildCoherentInitContext(conf));
+    public void testInit() {
+        underTest.init(buildCoherentInitContext());
     }
 
     @Test
-    public void testDependencyInjectionDef() throws ConfigurationException {
-        underTest.init(buildCoherentInitContext(conf));
+    public void testDependencyInjectionDef() {
+        underTest.init(buildCoherentInitContext());
         Object actual = underTest.nativeUnitModule();
         assertThat(actual).isInstanceOf(JmsModule.class);
     }
 
     @Test
     public void testRequiredPlugins() {
-        assertThat(underTest.requiredPlugins()).containsOnly(ApplicationPlugin.class, TransactionPlugin.class, JndiPlugin.class);
+        assertThat(underTest.requiredPlugins()).containsOnly(ApplicationProvider.class, TransactionPlugin.class, JndiPlugin.class);
     }
 
     @SuppressWarnings("unchecked")
-    private InitContext buildCoherentInitContext(Configuration conf) throws ConfigurationException {
+    private InitContext buildCoherentInitContext() {
         InitContext initContext = mock(InitContext.class);
 
-        ApplicationPlugin confPlugin = mock(ApplicationPlugin.class);
+        ApplicationProvider applicationProvider = mock(ApplicationProvider.class);
+        Coffig coffig = mock(Coffig.class);
+        when(coffig.get(JmsConfig.class)).thenReturn(conf);
         Application application = mock(Application.class);
-        when(application.getConfiguration()).thenReturn(conf);
+        when(application.getConfiguration()).thenReturn(coffig);
         when(application.getId()).thenReturn("test-app-id");
-        when(confPlugin.getApplication()).thenReturn(application);
+        when(applicationProvider.getApplication()).thenReturn(application);
 
         TransactionPlugin txplugin = mock(TransactionPlugin.class);
         JndiPlugin jndiplugin = mock(JndiPlugin.class);
-        when(jndiplugin.getJndiContexts()).thenReturn(new HashMap<String, Context>());
+        when(jndiplugin.getJndiContexts()).thenReturn(new HashMap<>());
 
         HashMap<Specification, Collection<Class<?>>> map = mock(HashMap.class);
 
-        when(initContext.dependency(ApplicationPlugin.class)).thenReturn(confPlugin);
+        when(initContext.dependency(ApplicationProvider.class)).thenReturn(applicationProvider);
         when(initContext.dependency(TransactionPlugin.class)).thenReturn(txplugin);
         when(initContext.dependency(JndiPlugin.class)).thenReturn(jndiplugin);
-        
+
         when(initContext.scannedTypesBySpecification()).thenReturn(map);
 
         when(map.get(Mockito.any(Specification.class))).thenReturn(Collections.EMPTY_LIST);

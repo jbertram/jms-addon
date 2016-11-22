@@ -25,11 +25,6 @@ import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Session;
 
-
-/**
- * @author pierre.thirouin@ext.mpsa.com
- *         12/11/2014
- */
 @RunWith(MockitoJUnitRunner.class)
 public class ManagedConnectionTest {
 

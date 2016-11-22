@@ -11,23 +11,33 @@ import com.google.common.collect.Lists;
 import io.nuun.kernel.api.plugin.InitState;
 import io.nuun.kernel.api.plugin.context.InitContext;
 import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
-import io.nuun.kernel.core.AbstractPlugin;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.kametic.specifications.Specification;
 import org.seedstack.jms.DestinationType;
+import org.seedstack.jms.JmsConfig;
 import org.seedstack.jms.JmsMessageListener;
-import org.seedstack.jms.spi.*;
+import org.seedstack.jms.spi.ConnectionDefinition;
+import org.seedstack.jms.spi.JmsExceptionHandler;
+import org.seedstack.jms.spi.JmsFactory;
+import org.seedstack.jms.spi.MessageListenerDefinition;
+import org.seedstack.jms.spi.MessagePoller;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.SeedException;
-import org.seedstack.seed.core.internal.application.ApplicationPlugin;
+import org.seedstack.seed.core.internal.AbstractSeedPlugin;
 import org.seedstack.seed.core.internal.jndi.JndiPlugin;
+import org.seedstack.seed.core.internal.transaction.TransactionPlugin;
 import org.seedstack.seed.core.utils.SeedCheckUtils;
-import org.seedstack.seed.transaction.internal.TransactionPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.Session;
 import javax.naming.Context;
 import java.util.Collection;
 import java.util.Map;
@@ -37,36 +47,35 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This plugin provides JMS support through JNDI or plain configuration.
- *
- * @author emmanuel.vinel@mpsa.com
- * @author adrien.lauer@mpsa.com
- * @author redouane.loulou@ext.mpsa.com
  */
-public class JmsPlugin extends AbstractPlugin {
+public class JmsPlugin extends AbstractSeedPlugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(JmsPlugin.class);
 
-    public static final String JMS_PLUGIN_CONFIGURATION_PREFIX = "org.seedstack.jms";
-    public static final String ERROR_CONNECTION_NAME = "connectionName";
-    public static final String ERROR_MESSAGE_LISTENER_NAME = "messageListenerName";
-    public static final String ERROR_DESTINATION_TYPE = "destinationType";
+    static final String ERROR_CONNECTION_NAME = "connectionName";
+    private static final String ERROR_MESSAGE_LISTENER_NAME = "messageListenerName";
+    private static final String ERROR_DESTINATION_TYPE = "destinationType";
 
     @SuppressWarnings("unchecked")
     private final Specification<Class<?>> messageListenerSpec = and(classImplements(MessageListener.class), classAnnotatedWith(JmsMessageListener.class));
     private final Specification<Class<?>> exceptionListenerSpec = classImplements(ExceptionListener.class);
     private final Specification<Class<?>> exceptionHandlerSpec = classImplements(JmsExceptionHandler.class);
 
-    private final ConcurrentMap<String, MessageListenerDefinition> messageListenerDefinitions = new ConcurrentHashMap<String, MessageListenerDefinition>();
-    private final ConcurrentMap<String, ConnectionDefinition> connectionDefinitions = new ConcurrentHashMap<String, ConnectionDefinition>();
+    private final ConcurrentMap<String, MessageListenerDefinition> messageListenerDefinitions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ConnectionDefinition> connectionDefinitions = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, Connection> connections = new ConcurrentHashMap<String, Connection>();
-    private final ConcurrentMap<String, MessagePoller> pollers = new ConcurrentHashMap<String, MessagePoller>();
+    private final ConcurrentMap<String, Connection> connections = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, MessagePoller> pollers = new ConcurrentHashMap<>();
 
     private final AtomicBoolean shouldStartConnections = new AtomicBoolean(false);
 
     private JmsFactory jmsFactory;
     private Application application;
-    private Configuration jmsConfiguration;
     private TransactionPlugin transactionPlugin;
+
+    @Override
+    public Collection<Class<?>> dependencies() {
+        return Lists.newArrayList(JndiPlugin.class, TransactionPlugin.class);
+    }
 
     @Override
     public String name() {
@@ -74,15 +83,15 @@ public class JmsPlugin extends AbstractPlugin {
     }
 
     @Override
-    public InitState init(InitContext initContext) {
+    public InitState initialize(InitContext initContext) {
         transactionPlugin = initContext.dependency(TransactionPlugin.class);
-        application = initContext.dependency(ApplicationPlugin.class).getApplication();
-        jmsConfiguration = application.getConfiguration().subset(JmsPlugin.JMS_PLUGIN_CONFIGURATION_PREFIX);
+        application = getApplication();
+        JmsConfig jmsConfig = getConfiguration(JmsConfig.class);
         Map<String, Context> jndiContexts = initContext.dependency(JndiPlugin.class).getJndiContexts();
 
-        jmsFactory = new JmsFactoryImpl(application.getId(), jmsConfiguration, jndiContexts);
+        jmsFactory = new JmsFactoryImpl(getApplication().getId(), jmsConfig, jndiContexts);
 
-        configureConnections(jmsConfiguration.getStringArray("connections"));
+        configureConnections(jmsConfig);
 
         configureMessageListeners(initContext.scannedTypesBySpecification().get(messageListenerSpec));
 
@@ -97,22 +106,18 @@ public class JmsPlugin extends AbstractPlugin {
             try {
                 connection.getValue().start();
             } catch (JMSException e) {
-                throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_START_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, connection.getKey());
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_START_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, connection.getKey());
             }
         }
 
-        for (MessagePoller messagePoller : pollers.values()) {
-            messagePoller.start();
-        }
+        pollers.values().forEach(MessagePoller::start);
     }
 
     @Override
     public void stop() {
         shouldStartConnections.set(false);
 
-        for (MessagePoller messagePoller : pollers.values()) {
-            messagePoller.stop();
-        }
+        pollers.values().forEach(MessagePoller::stop);
 
         for (Map.Entry<String, Connection> connection : this.connections.entrySet()) {
             try {
@@ -121,11 +126,6 @@ public class JmsPlugin extends AbstractPlugin {
                 LOGGER.error("Unable to cleanly stop JMS connection " + connection.getKey(), e);
             }
         }
-    }
-
-    @Override
-    public Collection<Class<?>> requiredPlugins() {
-        return Lists.<Class<?>>newArrayList(ApplicationPlugin.class, TransactionPlugin.class, JndiPlugin.class);
     }
 
     @Override
@@ -148,15 +148,13 @@ public class JmsPlugin extends AbstractPlugin {
         );
     }
 
-    private void configureConnections(String[] connectionNames) {
-        for (String connectionName : connectionNames) {
+    private void configureConnections(JmsConfig jmsConfig) {
+        for (Map.Entry<String, JmsConfig.ConnectionConfig> entry : jmsConfig.getConnections().entrySet()) {
             try {
-                Configuration connectionConfig = jmsConfiguration.subset("connection." + connectionName);
-                ConnectionDefinition connectionDefinition = jmsFactory.createConnectionDefinition(connectionName, connectionConfig, null);
-
+                ConnectionDefinition connectionDefinition = jmsFactory.createConnectionDefinition(entry.getKey(), entry.getValue(), null);
                 registerConnection(jmsFactory.createConnection(connectionDefinition), connectionDefinition);
             } catch (JMSException e) {
-                throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_CREATE_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, connectionName);
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, entry.getKey());
             }
         }
     }
@@ -173,13 +171,13 @@ public class JmsPlugin extends AbstractPlugin {
                 try {
                     isTransactional = transactionPlugin.isTransactional(messageListenerClass.getMethod("onMessage", Message.class));
                 } catch (NoSuchMethodException e) {
-                    throw SeedException.wrap(e, JmsErrorCodes.UNEXPECTED_EXCEPTION);
+                    throw SeedException.wrap(e, JmsErrorCode.UNEXPECTED_EXCEPTION);
                 }
 
                 Connection listenerConnection = connections.get(annotation.connection());
 
                 if (listenerConnection == null) {
-                    throw SeedException.createNew(JmsErrorCodes.MISSING_CONNECTION_FACTORY)
+                    throw SeedException.createNew(JmsErrorCode.MISSING_CONNECTION_FACTORY)
                             .put(ERROR_CONNECTION_NAME, annotation.connection())
                             .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
                 }
@@ -188,7 +186,7 @@ public class JmsPlugin extends AbstractPlugin {
                 try {
                     session = listenerConnection.createSession(isTransactional, Session.AUTO_ACKNOWLEDGE);
                 } catch (JMSException e) {
-                    throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_CREATE_SESSION)
+                    throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_SESSION)
                             .put(ERROR_CONNECTION_NAME, annotation.connection())
                             .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
                 }
@@ -200,7 +198,7 @@ public class JmsPlugin extends AbstractPlugin {
                     try {
                         destinationType = DestinationType.valueOf(application.substituteWithConfiguration(annotation.destinationTypeStr()));
                     } catch (IllegalArgumentException e) {
-                        throw SeedException.wrap(e, JmsErrorCodes.UNKNOWN_DESTINATION_TYPE)
+                        throw SeedException.wrap(e, JmsErrorCode.UNKNOWN_DESTINATION_TYPE)
                                 .put(ERROR_DESTINATION_TYPE, annotation.destinationTypeStr())
                                 .put(ERROR_CONNECTION_NAME, annotation.connection())
                                 .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
@@ -217,12 +215,12 @@ public class JmsPlugin extends AbstractPlugin {
                             destination = session.createTopic(application.substituteWithConfiguration(annotation.destinationName()));
                             break;
                         default:
-                            throw SeedException.createNew(JmsErrorCodes.UNKNOWN_DESTINATION_TYPE)
+                            throw SeedException.createNew(JmsErrorCode.UNKNOWN_DESTINATION_TYPE)
                                     .put(ERROR_CONNECTION_NAME, annotation.connection())
                                     .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
                     }
                 } catch (JMSException e) {
-                    throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_CREATE_DESTINATION)
+                    throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_DESTINATION)
                             .put(ERROR_DESTINATION_TYPE, destinationType.name())
                             .put(ERROR_CONNECTION_NAME, annotation.connection())
                             .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
@@ -278,7 +276,7 @@ public class JmsPlugin extends AbstractPlugin {
                     messagePoller.setExceptionListener(connection.getExceptionListener());
                 }
             } catch (Exception e) {
-                throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_CREATE_POLLER).put("pollerClass", messageListenerDefinition.getPoller());
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_POLLER).put("pollerClass", messageListenerDefinition.getPoller());
             }
 
             pollers.put(messageListenerDefinition.getName(), messagePoller);
@@ -300,18 +298,18 @@ public class JmsPlugin extends AbstractPlugin {
         SeedCheckUtils.checkIfNotNull(connectionDefinition);
 
         if (this.connectionDefinitions.putIfAbsent(connectionDefinition.getName(), connectionDefinition) != null) {
-            throw SeedException.createNew(JmsErrorCodes.DUPLICATE_CONNECTION_NAME).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
+            throw SeedException.createNew(JmsErrorCode.DUPLICATE_CONNECTION_NAME).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
         }
 
         if (this.connections.putIfAbsent(connectionDefinition.getName(), connection) != null) {
-            throw SeedException.createNew(JmsErrorCodes.DUPLICATE_CONNECTION_NAME).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
+            throw SeedException.createNew(JmsErrorCode.DUPLICATE_CONNECTION_NAME).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
         }
 
         if (shouldStartConnections.get()) {
             try {
                 connection.start();
             } catch (JMSException e) {
-                throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_START_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_START_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
             }
         }
     }
@@ -326,7 +324,7 @@ public class JmsPlugin extends AbstractPlugin {
 
         ConnectionDefinition connectionDefinition = connectionDefinitions.get(messageListenerDefinition.getConnectionName());
         if (connectionDefinition.isJeeMode() && messageListenerDefinition.getPoller() == null) {
-            throw SeedException.createNew(JmsErrorCodes.MESSAGE_POLLER_REQUIRED_IN_JEE_MODE)
+            throw SeedException.createNew(JmsErrorCode.MESSAGE_POLLER_REQUIRED_IN_JEE_MODE)
                     .put(ERROR_CONNECTION_NAME, connectionDefinition.getName())
                     .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
         }
@@ -334,11 +332,11 @@ public class JmsPlugin extends AbstractPlugin {
         try {
             createMessageConsumer(messageListenerDefinition);
         } catch (JMSException e) {
-            throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_CREATE_MESSAGE_CONSUMER).put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
+            throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_MESSAGE_CONSUMER).put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
         }
 
         if (messageListenerDefinitions.putIfAbsent(messageListenerDefinition.getName(), messageListenerDefinition) != null) {
-            throw SeedException.createNew(JmsErrorCodes.DUPLICATE_MESSAGE_LISTENER_DEFINITION_NAME).put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
+            throw SeedException.createNew(JmsErrorCode.DUPLICATE_MESSAGE_LISTENER_DEFINITION_NAME).put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
         }
     }
 

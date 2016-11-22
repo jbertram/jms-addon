@@ -7,46 +7,41 @@
  */
 package org.seedstack.jms.internal;
 
-import io.nuun.kernel.api.plugin.PluginException;
-import org.apache.commons.configuration.Configuration;
+import jodd.bean.BeanUtil;
+import jodd.bean.BeanUtilBean;
 import org.apache.commons.lang.StringUtils;
+import org.seedstack.jms.JmsConfig;
 import org.seedstack.jms.spi.ConnectionDefinition;
-import org.seedstack.jms.spi.JmsExceptionHandler;
 import org.seedstack.jms.spi.JmsFactory;
 import org.seedstack.seed.SeedException;
-import org.seedstack.seed.core.utils.SeedBeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * Factory to create JMS objects.
- *
- * @author pierre.thirouin@ext.mpsa.com
- * @author adrien.lauer@mpsa.com
  */
 class JmsFactoryImpl implements JmsFactory {
-    public static final int DEFAULT_RECONNECTION_DELAY = 30000;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(JmsFactoryImpl.class);
 
-    private final ConcurrentMap<String, ConnectionFactory> connectionFactoryMap = new ConcurrentHashMap<String, ConnectionFactory>();
+    private final ConcurrentMap<String, ConnectionFactory> connectionFactoryMap = new ConcurrentHashMap<>();
     private final Map<String, Context> jndiContexts;
     private final String applicationName;
-    private final Configuration jmsConfiguration;
+    private final JmsConfig jmsConfig;
 
-    JmsFactoryImpl(String applicationName, Configuration jmsConfiguration, Map<String, Context> jndiContexts) {
+    JmsFactoryImpl(String applicationName, JmsConfig jmsConfig, Map<String, Context> jndiContexts) {
         this.applicationName = applicationName;
-        this.jmsConfiguration = jmsConfiguration;
+        this.jmsConfig = jmsConfig;
         this.jndiContexts = jndiContexts;
 
         configureConnectionFactories();
@@ -77,57 +72,35 @@ class JmsFactoryImpl implements JmsFactory {
 
     @Override
     @SuppressWarnings("unchecked")
-    public ConnectionDefinition createConnectionDefinition(String connectionName, Configuration configuration, ConnectionFactory connectionFactory) {
+    public ConnectionDefinition createConnectionDefinition(String connectionName, JmsConfig.ConnectionConfig connectionConfig, ConnectionFactory connectionFactory) {
         // Find connection factory if not given explicitly
         if (connectionFactory == null) {
-            connectionFactory = connectionFactoryMap.get(configuration.getString("connection-factory"));
+            connectionFactory = connectionFactoryMap.get(connectionConfig.getConnectionFactory());
 
             if (connectionFactory == null) {
-                throw SeedException.createNew(JmsErrorCodes.MISSING_CONNECTION_FACTORY).put("connectionName", connectionName);
+                throw SeedException.createNew(JmsErrorCode.MISSING_CONNECTION_FACTORY).put("connectionName", connectionName);
             }
         }
 
-        // Create exception listener
-        String exceptionListenerClassName = configuration.getString("exception-listener");
-        Class<? extends ExceptionListener> exceptionListener = null;
-        if (StringUtils.isNotBlank(exceptionListenerClassName)) {
-            try {
-                exceptionListener = (Class<? extends ExceptionListener>) Class.forName(exceptionListenerClassName);
-            } catch (Exception e) {
-                throw new PluginException("Unable to load JMS ExceptionListener class " + exceptionListenerClassName, e);
-            }
-        }
-
-        // Create exception handler
-        String exceptionHandlerClassName = configuration.getString("exception-handler");
-        Class<? extends JmsExceptionHandler> exceptionHandler = null;
-        if (StringUtils.isNotBlank(exceptionHandlerClassName)) {
-            try {
-                exceptionHandler = (Class<? extends JmsExceptionHandler>) Class.forName(exceptionHandlerClassName);
-            } catch (Exception e) {
-                throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_LOAD_CLASS).put("exceptionHandler", exceptionHandlerClassName);
-            }
-        }
-
-        boolean jeeMode = configuration.getBoolean("jee-mode", false);
-        boolean shouldSetClientId = configuration.getBoolean("set-client-id", !jeeMode);
+        boolean jeeMode = connectionConfig.isJeeMode();
+        boolean shouldSetClientId = connectionConfig.isSetClientId();
 
         if (jeeMode && shouldSetClientId) {
-            throw SeedException.createNew(JmsErrorCodes.CANNOT_SET_CLIENT_ID_IN_JEE_MODE).put(JmsPlugin.ERROR_CONNECTION_NAME, connectionName);
+            throw SeedException.createNew(JmsErrorCode.CANNOT_SET_CLIENT_ID_IN_JEE_MODE).put(JmsPlugin.ERROR_CONNECTION_NAME, connectionName);
         }
 
         return new ConnectionDefinition(
                 connectionName,
                 connectionFactory,
-                configuration.getBoolean("managed-connection", true),
+                connectionConfig.isManaged(),
                 jeeMode,
                 shouldSetClientId,
-                configuration.getString("client-id", applicationName + "-" + connectionName),
-                configuration.getString("user"),
-                configuration.getString("password"),
-                configuration.getInt("reconnection-delay", DEFAULT_RECONNECTION_DELAY),
-                exceptionListener,
-                exceptionHandler
+                Optional.ofNullable(connectionConfig.getClientId()).orElse(applicationName + "-" + connectionName),
+                connectionConfig.getUser(),
+                connectionConfig.getPassword(),
+                connectionConfig.getReconnectionDelay(),
+                connectionConfig.getExceptionListener(),
+                connectionConfig.getExceptionHandler()
         );
     }
 
@@ -149,53 +122,66 @@ class JmsFactoryImpl implements JmsFactory {
     }
 
     private void configureConnectionFactories() {
-        String[] connectionFactories = jmsConfiguration.getStringArray("connection-factories");
+        for (Map.Entry<String, JmsConfig.ConnectionFactoryConfig> entry : jmsConfig.getConnectionFactories().entrySet()) {
+            String connectionFactoryName = entry.getKey();
+            JmsConfig.ConnectionFactoryConfig connectionFactoryConfig = entry.getValue();
 
-        if (connectionFactories != null) {
-            for (String connectionFactoryName : connectionFactories) {
-                Configuration connectionFactoryConfiguration = jmsConfiguration.subset("connection-factory." + connectionFactoryName);
+            String jndiName = connectionFactoryConfig.getJndiName();
+            String jndiContext = connectionFactoryConfig.getJndiContext();
+            Class<? extends ConnectionFactory> connectionFactoryClass = connectionFactoryConfig.getVendorClass();
 
-                String jndiName = connectionFactoryConfiguration.getString("jndi.name");
-                String jndiContext = connectionFactoryConfiguration.getString("jndi.context", "default");
-                String classname = connectionFactoryConfiguration.getString("vendor.class");
-
-                Object connectionFactory;
-                if (StringUtils.isNotBlank(jndiName)) {
-                    connectionFactory = lookupConnectionFactory(connectionFactoryName, jndiContext, jndiName);
-                } else if (StringUtils.isNotBlank(classname)) {
-                    try {
-                        connectionFactory = SeedBeanUtils.createFromConfiguration(connectionFactoryConfiguration, "vendor");
-
-                    } catch (Exception e) {
-                        throw SeedException.wrap(e, JmsErrorCodes.UNABLE_TO_CREATE_CONNECTION_FACTORY).put("connectionFactoryName", connectionFactoryName);
-                    }
-                } else {
-                    throw SeedException.createNew(JmsErrorCodes.MISCONFIGURED_CONNECTION_FACTORY).put("connectionFactoryName", connectionFactoryName);
+            Object connectionFactory;
+            if (StringUtils.isNotBlank(jndiName)) {
+                connectionFactory = lookupConnectionFactory(connectionFactoryName, jndiContext, jndiName);
+            } else if (connectionFactoryClass != null) {
+                try {
+                    connectionFactory = connectionFactoryClass.newInstance();
+                    setProperties(connectionFactory, connectionFactoryConfig.getVendorProperties());
+                } catch (Exception e) {
+                    throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_CONNECTION_FACTORY).put("connectionFactoryName", connectionFactoryName);
                 }
-
-                if (!(connectionFactory instanceof ConnectionFactory)) {
-                    throw SeedException.createNew(JmsErrorCodes.UNRECOGNIZED_CONNECTION_FACTORY).put("classname", classname);
-                }
-
-                connectionFactoryMap.put(connectionFactoryName, (ConnectionFactory) connectionFactory);
+            } else {
+                throw SeedException.createNew(JmsErrorCode.MISCONFIGURED_CONNECTION_FACTORY).put("connectionFactoryName", connectionFactoryName);
             }
+
+            if (!(connectionFactory instanceof ConnectionFactory)) {
+                throw SeedException.createNew(JmsErrorCode.UNRECOGNIZED_CONNECTION_FACTORY).put("classname", connectionFactoryClass);
+            }
+
+            connectionFactoryMap.put(connectionFactoryName, (ConnectionFactory) connectionFactory);
         }
     }
 
     private Object lookupConnectionFactory(String connectionFactoryName, String contextName, String jndiName) {
         try {
             if (this.jndiContexts == null || this.jndiContexts.isEmpty()) {
-                throw SeedException.createNew(JmsErrorCodes.NO_JNDI_CONTEXT).put("connectionFactoryName", connectionFactoryName);
+                throw SeedException.createNew(JmsErrorCode.NO_JNDI_CONTEXT).put("connectionFactoryName", connectionFactoryName);
             }
 
             Context context = this.jndiContexts.get(contextName);
             if (context == null) {
-                throw SeedException.createNew(JmsErrorCodes.MISSING_JNDI_CONTEXT).put("contextName", contextName).put("connectionFactoryName", connectionFactoryName);
+                throw SeedException.createNew(JmsErrorCode.MISSING_JNDI_CONTEXT).put("contextName", contextName).put("connectionFactoryName", connectionFactoryName);
             }
 
             return context.lookup(jndiName);
         } catch (NamingException e) {
-            throw SeedException.wrap(e, JmsErrorCodes.JNDI_LOOKUP_ERROR).put("connectionFactoryName", connectionFactoryName);
+            throw SeedException.wrap(e, JmsErrorCode.JNDI_LOOKUP_ERROR).put("connectionFactoryName", connectionFactoryName);
+        }
+    }
+
+    private void setProperties(Object bean, Properties properties) {
+        BeanUtil beanUtil = new BeanUtilBean();
+        for (String key : properties.stringPropertyNames()) {
+            String value = properties.getProperty(key);
+            try {
+                if (!beanUtil.hasProperty(bean, key)) {
+                    throw SeedException.createNew(JmsErrorCode.PROPERTY_NOT_FOUND).put("property", key).put("class", bean.getClass().getCanonicalName());
+                }
+
+                beanUtil.setProperty(bean, key, value);
+            } catch (Exception e) {
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_SET_PROPERTY).put("property", key).put("class", bean.getClass().getCanonicalName()).put("value", value);
+            }
         }
     }
 }

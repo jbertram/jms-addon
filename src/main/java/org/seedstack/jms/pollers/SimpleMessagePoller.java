@@ -23,8 +23,10 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @author redouane.loulou@ext.mpsa.com
- * @author adrien.lauer@mpsa.com
+ * {@link MessagePoller} implementing a simple polling strategy that waits at most 30 seconds using
+ * {@link MessageConsumer#receive(long)} and then loop over. When a message is received, the {@link MessageListener} is
+ * invoked and the session is committed. If an exception occurs the session is rollbacked, the {@link ExceptionListener}
+ * is invoked if any, the polling thread is shutdown and scheduled for restart in 10 seconds.
  */
 public class SimpleMessagePoller implements MessagePoller, Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleMessagePoller.class);

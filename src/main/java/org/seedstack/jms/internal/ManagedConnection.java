@@ -31,14 +31,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * This connection is a facade to the actual jms connection. It provides the reconnection mechanism.
- *
- * @author pierre.thirouin@ext.mpsa.com
- * @author adrien.lauer@mpsa.com
  */
 class ManagedConnection implements Connection, ExceptionListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(ManagedConnection.class);
 
-    private final List<ManagedSession> sessions = new ArrayList<ManagedSession>();
+    private final List<ManagedSession> sessions = new ArrayList<>();
     private final AtomicBoolean needToStart = new AtomicBoolean(false);
 
     private final ConnectionDefinition connectionDefinition;

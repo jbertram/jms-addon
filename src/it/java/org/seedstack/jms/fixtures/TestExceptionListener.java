@@ -10,11 +10,6 @@ package org.seedstack.jms.fixtures;
 import javax.jms.JMSException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Dummy exceptionListener for tests
- *
- * @author redouane.loulou@ext.mpsa.com
- */
 public class TestExceptionListener implements javax.jms.ExceptionListener {
     static AtomicInteger count = new AtomicInteger();
 

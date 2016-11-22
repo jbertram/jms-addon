@@ -22,10 +22,6 @@ import org.seedstack.seed.transaction.spi.TransactionMetadataResolver;
  * resolves metadata for transactions marked with
  * {@link org.seedstack.jms.JmsConnection} or for the method
  * {@link MessageListener#onMessage(javax.jms.Message)}.
- *
- * @author adrien.lauer@mpsa.com
- * @author thierry.bouvet@mpsa.com
- * 
  */
 class JmsTransactionMetadataResolver implements TransactionMetadataResolver {
     @Override

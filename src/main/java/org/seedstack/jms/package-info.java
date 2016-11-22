@@ -7,7 +7,5 @@
  */
 /**
  * Contains Seed classes facilitating the use of JMS messaging.
- *
- * @author Pierre Thirouin
  */
 package org.seedstack.jms;

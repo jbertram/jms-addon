@@ -36,7 +36,7 @@ public class JmsPollingIT {
         testSender4.send("HELLO");
 
         try {
-            count.await(1, TimeUnit.SECONDS);
+            count.await(5, TimeUnit.SECONDS);
 
             Assertions.assertThat(text).isEqualTo("HELLO");
         } catch (InterruptedException e) {

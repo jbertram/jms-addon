@@ -12,14 +12,14 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.internal.util.reflection.Whitebox;
+import org.seedstack.jms.fixtures.TestExceptionListener;
 import org.seedstack.jms.fixtures.TestSender3;
 import org.seedstack.jms.fixtures.TestSender4;
 import org.seedstack.jms.internal.FakeConnectionFactoryImpl;
 import org.seedstack.jms.spi.ConnectionDefinition;
+import org.seedstack.jms.spi.JmsFactory;
 import org.seedstack.seed.Logging;
 import org.seedstack.seed.it.SeedITRunner;
-import org.seedstack.jms.fixtures.TestExceptionListener;
-import org.seedstack.jms.spi.JmsFactory;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -32,9 +32,6 @@ import java.util.concurrent.TimeUnit;
 import static org.fest.reflect.core.Reflection.method;
 import static org.junit.Assert.fail;
 
-/**
- * @author pierre.thirouin@ext.mpsa.com
- */
 @RunWith(SeedITRunner.class)
 @NotThreadSafe
 public class JmsRefreshIT {

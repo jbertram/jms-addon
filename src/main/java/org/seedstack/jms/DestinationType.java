@@ -9,8 +9,6 @@ package org.seedstack.jms;
 
 /**
  * Enumerates JMS destination types.
- *
- * @author emmanuel.vinel@mpsa.com
  */
 public enum DestinationType {
     QUEUE,

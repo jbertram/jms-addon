@@ -7,11 +7,11 @@
  */
 package org.seedstack.jms.internal;
 
-import org.seedstack.seed.transaction.spi.TransactionalProxy;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.seedstack.seed.core.internal.transaction.TransactionalProxy;
 
 import javax.jms.*;
 import java.io.Serializable;
@@ -209,7 +209,7 @@ public class SeedJmsSessionTest {
     @Test
     public void testSetMessageListener() throws JMSException {
         final MessageListener mockListener = mock(MessageListener.class);
-        final List<MessageListener> listeners = new ArrayList<MessageListener>();
+        final List<MessageListener> listeners = new ArrayList<>();
         doAnswer(new Answer() {
 
             @Override
@@ -360,7 +360,7 @@ public class SeedJmsSessionTest {
     @Test
     public void testUnsubscribe() throws JMSException {
 
-        final Map<String, Boolean> subscribeHashMap = new HashMap<String, Boolean>();
+        final Map<String, Boolean> subscribeHashMap = new HashMap<>();
         subscribeHashMap.put("name", true);
 
         doAnswer(new Answer() {

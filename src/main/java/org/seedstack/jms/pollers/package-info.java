@@ -7,7 +7,5 @@
  */
 /**
  * Provides {@link org.seedstack.jms.spi.MessagePoller} implementations.
- *
- * @author pierre.thirouin@ext.mpsa.com (Pierre Thirouin)
  */
 package org.seedstack.jms.pollers;

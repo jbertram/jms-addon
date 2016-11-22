@@ -15,9 +15,6 @@ import javax.jms.Session;
 
 /**
  * Interface for message pollers.
- *
- * @author redouane.loulou@ext.mpsa.com
- * @author adrien.lauer@mpsa.com
  */
 public interface MessagePoller {
     void setSession(Session session);

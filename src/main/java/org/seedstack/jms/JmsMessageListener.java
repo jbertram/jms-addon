@@ -18,9 +18,6 @@ import java.lang.annotation.Target;
 
 /**
  * This annotations marks a JMS message listener that will be invoked when a message arrives.
- *
- * @author emmanuel.vinel@mpsa.com
- * @author adrien.lauer@mpsa.com
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

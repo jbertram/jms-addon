@@ -19,10 +19,6 @@ import javax.jms.*;
 
 import static org.mockito.Mockito.*;
 
-/**
- * @author pierre.thirouin@ext.mpsa.com
- *         12/11/2014
- */
 @RunWith(MockitoJUnitRunner.class)
 public class ManagedMessageConsumerTest {
 

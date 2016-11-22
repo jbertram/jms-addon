@@ -7,7 +7,7 @@
  */
 package org.seedstack.jms.spi;
 
-import org.apache.commons.configuration.Configuration;
+import org.seedstack.jms.JmsConfig;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -16,5 +16,5 @@ import javax.jms.JMSException;
 public interface JmsFactory {
     Connection createConnection(ConnectionDefinition connectionDefinition) throws JMSException;
 
-    ConnectionDefinition createConnectionDefinition(String connectionName, Configuration configuration, ConnectionFactory connectionFactory);
+    ConnectionDefinition createConnectionDefinition(String connectionName, JmsConfig.ConnectionConfig connectionConfig, ConnectionFactory connectionFactory);
 }
