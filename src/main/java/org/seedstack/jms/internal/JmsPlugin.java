@@ -171,7 +171,8 @@ public class JmsPlugin extends AbstractSeedPlugin {
                 try {
                     isTransactional = transactionPlugin.isTransactional(messageListenerClass.getMethod("onMessage", Message.class));
                 } catch (NoSuchMethodException e) {
-                    throw SeedException.wrap(e, JmsErrorCode.UNEXPECTED_EXCEPTION);
+                    throw SeedException.wrap(e, JmsErrorCode.INVALID_MESSAGE_LISTENER_CLASS)
+                            .put("messageListenerClass", messageListenerClass.getName());
                 }
 
                 Connection listenerConnection = connections.get(annotation.connection());
@@ -216,6 +217,7 @@ public class JmsPlugin extends AbstractSeedPlugin {
                             break;
                         default:
                             throw SeedException.createNew(JmsErrorCode.UNKNOWN_DESTINATION_TYPE)
+                                    .put(ERROR_DESTINATION_TYPE, destinationType)
                                     .put(ERROR_CONNECTION_NAME, annotation.connection())
                                     .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
                     }
@@ -332,11 +334,13 @@ public class JmsPlugin extends AbstractSeedPlugin {
         try {
             createMessageConsumer(messageListenerDefinition);
         } catch (JMSException e) {
-            throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_MESSAGE_CONSUMER).put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
+            throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_MESSAGE_CONSUMER)
+                    .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
         }
 
         if (messageListenerDefinitions.putIfAbsent(messageListenerDefinition.getName(), messageListenerDefinition) != null) {
-            throw SeedException.createNew(JmsErrorCode.DUPLICATE_MESSAGE_LISTENER_DEFINITION_NAME).put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
+            throw SeedException.createNew(JmsErrorCode.DUPLICATE_MESSAGE_LISTENER_NAME)
+                    .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
         }
     }
 

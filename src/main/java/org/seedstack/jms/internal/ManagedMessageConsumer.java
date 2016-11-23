@@ -7,7 +7,6 @@
  */
 package org.seedstack.jms.internal;
 
-import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.utils.SeedCheckUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +46,7 @@ class ManagedMessageConsumer implements MessageConsumer {
         this.polling = polling;
     }
 
-    void refresh(Session session) {
+    void refresh(Session session) throws JMSException {
         messageConsumerLock.writeLock().lock();
         try {
             // Create a new messageConsumer
@@ -63,8 +62,6 @@ class ManagedMessageConsumer implements MessageConsumer {
             if (messageListener != null && !this.polling) {
                 messageConsumer.setMessageListener(messageListener);
             }
-        } catch (JMSException e) {
-            throw SeedException.wrap(e, JmsErrorCode.INITIALIZATION_EXCEPTION);
         } finally {
             messageConsumerLock.writeLock().unlock();
         }

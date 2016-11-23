@@ -145,7 +145,7 @@ class JmsFactoryImpl implements JmsFactory {
             }
 
             if (!(connectionFactory instanceof ConnectionFactory)) {
-                throw SeedException.createNew(JmsErrorCode.UNRECOGNIZED_CONNECTION_FACTORY).put("classname", connectionFactoryClass);
+                throw SeedException.createNew(JmsErrorCode.UNRECOGNIZED_CONNECTION_FACTORY).put("className", connectionFactoryClass);
             }
 
             connectionFactoryMap.put(connectionFactoryName, (ConnectionFactory) connectionFactory);
