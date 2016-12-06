@@ -7,7 +7,6 @@
  */
 package org.seedstack.jms.internal;
 
-import org.seedstack.seed.core.utils.SeedCheckUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +18,8 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This session is a facade of a jms messageConsumer. It allows the reconnection mechanism.
@@ -36,8 +37,8 @@ class ManagedMessageConsumer implements MessageConsumer {
     protected final ReentrantReadWriteLock messageConsumerLock = new ReentrantReadWriteLock();
 
     ManagedMessageConsumer(MessageConsumer messageConsumer, Destination destination, @Nullable String messageSelector, boolean noLocal, boolean polling) {
-        SeedCheckUtils.checkIfNotNull(messageConsumer);
-        SeedCheckUtils.checkIfNotNull(destination);
+        checkNotNull(messageConsumer);
+        checkNotNull(destination);
 
         this.messageConsumer = messageConsumer;
         this.messageSelector = messageSelector;

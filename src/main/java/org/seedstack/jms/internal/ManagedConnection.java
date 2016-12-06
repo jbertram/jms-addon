@@ -7,7 +7,6 @@
  */
 package org.seedstack.jms.internal;
 
-import org.seedstack.seed.core.utils.SeedCheckUtils;
 import org.seedstack.jms.spi.ConnectionDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +28,8 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * This connection is a facade to the actual jms connection. It provides the reconnection mechanism.
  */
@@ -47,7 +48,7 @@ class ManagedConnection implements Connection, ExceptionListener {
     private ExceptionListener exceptionListener;
 
     ManagedConnection(ConnectionDefinition connectionDefinition, JmsFactoryImpl jmsFactoryImpl) throws JMSException {
-        SeedCheckUtils.checkIfNotNull(connectionDefinition);
+        checkNotNull(connectionDefinition);
 
         this.jmsFactoryImpl = jmsFactoryImpl;
         this.connectionDefinition = connectionDefinition;

@@ -7,15 +7,14 @@
  */
 package org.seedstack.jms.internal;
 
-import java.lang.reflect.Method;
-
-import javax.jms.MessageListener;
-
 import org.aopalliance.intercept.MethodInvocation;
 import org.seedstack.jms.JmsConnection;
-import org.seedstack.seed.core.utils.SeedReflectionUtils;
 import org.seedstack.seed.transaction.spi.TransactionMetadata;
 import org.seedstack.seed.transaction.spi.TransactionMetadataResolver;
+
+import javax.jms.MessageListener;
+import java.lang.reflect.Method;
+import java.util.Optional;
 
 /**
  * This {@link org.seedstack.seed.transaction.spi.TransactionMetadataResolver}
@@ -36,13 +35,12 @@ class JmsTransactionMetadataResolver implements TransactionMetadataResolver {
                 return transactionMetadata;
             }
         }
-        JmsConnection jmsConnection = SeedReflectionUtils.getMetaAnnotationFromAncestors(methodInvocation.getMethod(),
-                JmsConnection.class);
+        Optional<JmsConnection> jmsConnection = JmsConnectionResolver.INSTANCE.apply(methodInvocation.getMethod());
 
-        if (jmsConnection != null) {
+        if (jmsConnection.isPresent()) {
             TransactionMetadata transactionMetadata = new TransactionMetadata();
             transactionMetadata.setHandler(JmsTransactionHandler.class);
-            transactionMetadata.setResource(jmsConnection.value());
+            transactionMetadata.setResource(jmsConnection.get().value());
 
             return transactionMetadata;
         }

@@ -26,7 +26,6 @@ import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.AbstractSeedPlugin;
 import org.seedstack.seed.core.internal.jndi.JndiPlugin;
 import org.seedstack.seed.core.internal.transaction.TransactionPlugin;
-import org.seedstack.seed.core.utils.SeedCheckUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +43,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This plugin provides JMS support through JNDI or plain configuration.
@@ -296,8 +297,8 @@ public class JmsPlugin extends AbstractSeedPlugin {
      * @param connectionDefinition the connection definition.
      */
     public void registerConnection(Connection connection, ConnectionDefinition connectionDefinition) {
-        SeedCheckUtils.checkIfNotNull(connection);
-        SeedCheckUtils.checkIfNotNull(connectionDefinition);
+        checkNotNull(connection);
+        checkNotNull(connectionDefinition);
 
         if (this.connectionDefinitions.putIfAbsent(connectionDefinition.getName(), connectionDefinition) != null) {
             throw SeedException.createNew(JmsErrorCode.DUPLICATE_CONNECTION_NAME).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
@@ -322,7 +323,7 @@ public class JmsPlugin extends AbstractSeedPlugin {
      * @param messageListenerDefinition the message listener definition.
      */
     public void registerMessageListener(MessageListenerDefinition messageListenerDefinition) {
-        SeedCheckUtils.checkIfNotNull(messageListenerDefinition);
+        checkNotNull(messageListenerDefinition);
 
         ConnectionDefinition connectionDefinition = connectionDefinitions.get(messageListenerDefinition.getConnectionName());
         if (connectionDefinition.isJeeMode() && messageListenerDefinition.getPoller() == null) {

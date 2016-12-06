@@ -7,11 +7,8 @@
  */
 package org.seedstack.jms.internal;
 
-import org.seedstack.seed.ErrorCode;
+import org.seedstack.shed.exception.ErrorCode;
 
-/**
- * JMS error codes.
- */
 enum JmsErrorCode implements ErrorCode {
     INVALID_MESSAGE_LISTENER_CLASS,
     CANNOT_SET_CLIENT_ID_IN_JEE_MODE,

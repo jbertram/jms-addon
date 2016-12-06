@@ -7,7 +7,6 @@
  */
 package org.seedstack.jms.pollers;
 
-import org.seedstack.seed.core.utils.SeedCheckUtils;
 import org.seedstack.jms.spi.MessagePoller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +20,8 @@ import javax.jms.Session;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * {@link MessagePoller} implementing a simple polling strategy that waits at most 30 seconds using
@@ -66,9 +67,9 @@ public class SimpleMessagePoller implements MessagePoller, Runnable {
     @Override
     public synchronized void start() {
         if (!active.getAndSet(true)) {
-            SeedCheckUtils.checkIfNotNull(this.session);
-            SeedCheckUtils.checkIfNotNull(this.messageConsumer);
-            SeedCheckUtils.checkIfNotNull(this.messageListener);
+            checkNotNull(this.session);
+            checkNotNull(this.messageConsumer);
+            checkNotNull(this.messageListener);
 
             startThread();
         }

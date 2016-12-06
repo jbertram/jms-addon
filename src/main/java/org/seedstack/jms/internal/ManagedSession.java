@@ -7,16 +7,34 @@
  */
 package org.seedstack.jms.internal;
 
-import org.seedstack.seed.core.utils.SeedCheckUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.*;
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
+import javax.jms.Session;
+import javax.jms.StreamMessage;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
+import javax.jms.TopicSubscriber;
 import java.io.Serializable;
-import java.lang.IllegalStateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This session is a facade of a jms session. It allows the reconnection mechanism.
@@ -38,7 +56,7 @@ class ManagedSession implements Session {
     private ReentrantReadWriteLock sessionLock = new ReentrantReadWriteLock();
 
     ManagedSession(Session session, boolean transacted, int acknowledgeMode, boolean polling) {
-        SeedCheckUtils.checkIfNotNull(session);
+        checkNotNull(session);
         
         this.session = session;
         this.transacted = transacted;
