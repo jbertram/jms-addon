@@ -18,7 +18,7 @@ import org.seedstack.jms.JmsConfig;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.core.internal.jndi.JndiPlugin;
 import org.seedstack.seed.core.internal.transaction.TransactionPlugin;
-import org.seedstack.seed.spi.config.ApplicationProvider;
+import org.seedstack.seed.spi.ApplicationProvider;
 
 import java.util.Collection;
 import java.util.Collections;
