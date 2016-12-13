@@ -1,7 +1,7 @@
-# Version 3.0.0 (2016-11-?)
+# Version 3.0.0 (2016-12-13)
 
+* [brk] Update to SeedStack 16.11 new configuration system.
 * [chg] Transformed into a single module add-on. 
-* [brk] Moved to SeedStack 16.11 new configuration system.
 
 # Version 2.1.2 (2016-04-26)
 
