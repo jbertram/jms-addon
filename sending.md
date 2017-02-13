@@ -1,6 +1,7 @@
 ---
 title: "Sending messages"
-name: "JMS"
+parent: "JMS"
+weight: -1
 repo: "https://github.com/seedstack/jms-addon"
 tags:
     - "jms"

@@ -1,12 +1,8 @@
 ---
-title: "Basics"
-name: "JMS"
+title: "JMS"
 repo: "https://github.com/seedstack/jms-addon"
-date: 2016-01-21
 author: Adrien LAUER
 description: "Provides configuration, injection and connection resilience for Java Messaging System 1.1."
-backend: true
-weight: -1
 zones:
     - Addons
 menu:
