@@ -45,7 +45,7 @@ In JNDI mode, Seed will lookup for connection factory instances using the name a
     connection-factory.connection-factory-1.jndi.context = context for lookup  # Optional
 
 The context must be specified according to the list of JNDI contexts defined in core support (see [the corresponding
-documentation](/docs/seed/manual/core/jndi)). If no context is specified the default context is used.
+documentation]({{< ref "docs/seed/manual/more.md#jndi" >}})). If no context is specified the default context is used.
 
 # Connections
 
