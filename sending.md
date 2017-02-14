@@ -72,7 +72,7 @@ When you inject a session or a connection and automatic reconnection is enabled,
 embed a reconnection mechanism. When the connection is down, creating a producer or sending a message will throw a 
 JMSException. But when the underlying connection is up again, **the connection and the session will be refreshed**. 
 So you won't need to get new connection or session. By default Seed attempt to reconnect every 30 seconds, but this is 
-configurable (see [here](#automatic-reconnection)).
+configurable (see [here]({{< ref "addons/jms/configuration.md#automatic-reconnection" >}})).
 
 {{% callout info %}}
 Notice that it is still up to you to handle the retry policy of the sent message.
