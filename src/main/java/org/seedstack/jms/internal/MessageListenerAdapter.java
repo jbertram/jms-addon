@@ -18,7 +18,6 @@ import javax.jms.MessageListener;
 class MessageListenerAdapter implements MessageListener {
     @Inject
     private static Injector injector;
-
     private final Key<MessageListener> key;
     private final String name;
 

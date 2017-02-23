@@ -30,47 +30,44 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * This session is a facade of a jms session. It allows the reconnection mechanism.
+ * This session is a facade of a JMS session. It allows the reconnection mechanism.
  */
 class ManagedSession implements Session {
-
-    private static final Logger logger = LoggerFactory.getLogger(ManagedSession.class);
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManagedSession.class);
     private final Boolean transacted;
-
     private final Integer acknowledgeMode;
-
-    private Session session;
-    
     private final boolean polling;
+    private final Set<ManagedMessageConsumer> messageConsumers = ConcurrentHashMap.newKeySet();
+    private final ReentrantReadWriteLock sessionLock = new ReentrantReadWriteLock();
+    private final ManagedConnection managedConnection;
+    private Session session;
 
-    private List<ManagedMessageConsumer> managedMessageConsumers = new ArrayList<>();
-
-    private ReentrantReadWriteLock sessionLock = new ReentrantReadWriteLock();
-
-    ManagedSession(Session session, boolean transacted, int acknowledgeMode, boolean polling) {
+    ManagedSession(Session session, boolean transacted, int acknowledgeMode, boolean polling, ManagedConnection managedConnection) {
         checkNotNull(session);
-        
+
+        LOGGER.debug("Creating managed JMS session {}", this);
+
         this.session = session;
         this.transacted = transacted;
         this.acknowledgeMode = acknowledgeMode;
         this.polling = polling;
+        this.managedConnection = managedConnection;
     }
 
     void refresh(Connection connection) throws JMSException {
         sessionLock.writeLock().lock();
         try {
+            LOGGER.debug("Refreshing managed JMS session {}", this);
             session = connection.createSession(this.transacted, this.acknowledgeMode);
-
-            for (ManagedMessageConsumer managedMessageConsumer : managedMessageConsumers) {
-                managedMessageConsumer.refresh(session);
+            for (ManagedMessageConsumer messageConsumer : messageConsumers) {
+                messageConsumer.refresh(session);
             }
         } finally {
             sessionLock.writeLock().unlock();
@@ -78,14 +75,14 @@ class ManagedSession implements Session {
     }
 
     /**
-     * Reset the session and the message consumers on cascade.
+     * Reset the session and the message consumers in cascade.
      */
     void reset() {
         sessionLock.writeLock().lock();
         try {
-            logger.trace("Resetting session");
+            LOGGER.debug("Resetting managed JMS session {}", this);
             session = null;
-            for (ManagedMessageConsumer managedMessageConsumer : managedMessageConsumers) {
+            for (ManagedMessageConsumer managedMessageConsumer : messageConsumers) {
                 managedMessageConsumer.reset();
             }
         } finally {
@@ -99,7 +96,6 @@ class ManagedSession implements Session {
             if (session == null) {
                 throw new JMSException("Attempt to use a session during connection refresh");
             }
-
             return session;
         } finally {
             sessionLock.readLock().unlock();
@@ -168,7 +164,12 @@ class ManagedSession implements Session {
 
     @Override
     public void close() throws JMSException {
-        getSession().close();
+        try {
+            LOGGER.debug("Closing managed JMS session {}", this);
+            getSession().close();
+        } finally {
+            managedConnection.removeSession(this);
+        }
     }
 
     @Override
@@ -215,9 +216,15 @@ class ManagedSession implements Session {
     }
 
     @Override
-    public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean NoLocal) throws JMSException {
-        ManagedMessageConsumer consumer = new ManagedMessageConsumer(getSession().createConsumer(destination, messageSelector, NoLocal), destination, messageSelector, NoLocal, polling);
-        managedMessageConsumers.add(consumer);
+    public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
+        ManagedMessageConsumer consumer = new ManagedMessageConsumer(
+                getSession().createConsumer(destination, messageSelector, noLocal),
+                destination,
+                messageSelector,
+                noLocal,
+                polling,
+                this);
+        messageConsumers.add(consumer);
         return consumer;
     }
 
@@ -264,5 +271,9 @@ class ManagedSession implements Session {
     @Override
     public void unsubscribe(String name) throws JMSException {
         getSession().unsubscribe(name);
+    }
+
+    void removeMessageConsumer(ManagedMessageConsumer managedMessageConsumer) {
+        messageConsumers.remove(managedMessageConsumer);
     }
 }

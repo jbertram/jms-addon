@@ -8,7 +8,7 @@
 package org.seedstack.jms.internal;
 
 import com.google.common.collect.Lists;
-
+import com.google.common.collect.Sets;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +24,9 @@ import javax.jms.ConnectionFactory;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Session;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagedConnectionTest {
@@ -57,18 +60,13 @@ public class ManagedConnectionTest {
         Assertions.assertThat(connection).isNotNull();
         // Mock the created session
         ManagedSession session = Mockito.mock(ManagedSession.class);
-        Whitebox.setInternalState(underTest, "sessions", Lists.newArrayList(session));
+        Whitebox.setInternalState(underTest, "sessions", Sets.newConcurrentHashSet(Lists.newArrayList(session)));
 
         // Failure
         Object jmsFactoryImpl = Whitebox.getInternalState(underTest, "jmsFactoryImpl");
         Whitebox.setInternalState(underTest, "jmsFactoryImpl", new FakeConnectionFactoryImpl());
-        underTest.setExceptionListener(new javax.jms.ExceptionListener() {
-			
-			@Override
-			public void onException(JMSException exception) {
-				
-			}
-		});
+        underTest.setExceptionListener(exception -> {
+        });
         underTest.onException(new JMSException("Connection closed"));
 
         // Reset 
@@ -90,11 +88,7 @@ public class ManagedConnectionTest {
     @Test
     public void test_that_wraped_exceptionlistener_from_managedConnection_differs_from_jmsbroker_connection() throws InterruptedException, JMSException {
         Whitebox.setInternalState(underTest, "jmsFactoryImpl", new FakeConnectionFactoryImpl());
-        javax.jms.ExceptionListener exceptionListener = new javax.jms.ExceptionListener() {
-            @Override
-            public void onException(JMSException e) {
-
-            }
+        javax.jms.ExceptionListener exceptionListener = e -> {
         };
         underTest.setExceptionListener(exceptionListener);
         Connection jmsConnection = (Connection) Whitebox.getInternalState(underTest, "connection");
@@ -102,6 +96,13 @@ public class ManagedConnectionTest {
         javax.jms.ExceptionListener exceptionListenerMC = (ExceptionListener) Whitebox.getInternalState(underTest, "exceptionListener");
         Assertions.assertThat(exceptionListenerAQ).isNotEqualTo(exceptionListenerMC);
         Assertions.assertThat(exceptionListenerMC).isEqualTo(exceptionListener);
+    }
 
+    @Test
+    public void consumerIsRemovedFromSessionAfterClose() throws Exception {
+        Session session = underTest.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        assertThat((Set<ManagedSession>) Whitebox.getInternalState(underTest, "sessions")).containsExactly((ManagedSession) session);
+        session.close();
+        assertThat((Set<ManagedSession>) Whitebox.getInternalState(underTest, "sessions")).isEmpty();
     }
 }

@@ -8,7 +8,7 @@
 package org.seedstack.jms.internal;
 
 import com.google.common.collect.Lists;
-import org.assertj.core.api.Assertions;
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,15 +17,20 @@ import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.jms.*;
-import java.util.List;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagedSessionTest {
 
     private ManagedSession underTest;
     @Mock
-    private Connection connection;
+    private ManagedConnection connection;
     @Mock
     private Session session;
     @Mock
@@ -33,7 +38,7 @@ public class ManagedSessionTest {
 
     @Before
     public void setUp() throws JMSException {
-        underTest = new ManagedSession(session, true, Session.AUTO_ACKNOWLEDGE, false);
+        underTest = new ManagedSession(session, true, Session.AUTO_ACKNOWLEDGE, false, connection);
         Mockito.when(session.createConsumer(destination, null, false)).thenReturn(Mockito.mock(MessageConsumer.class));
     }
 
@@ -41,23 +46,23 @@ public class ManagedSessionTest {
     public void session_is_reset() throws JMSException {
         // Check the session state
         Session actualSession = (Session) Whitebox.getInternalState(underTest, "session");
-        Assertions.assertThat(actualSession).isNotNull();
+        assertThat(actualSession).isNotNull();
 
         // Create two consumers
         underTest.createConsumer(destination);
         underTest.createConsumer(destination);
-        List<ManagedMessageConsumer> managedMessageConsumers = (List<ManagedMessageConsumer>) Whitebox.getInternalState(underTest, "managedMessageConsumers");
-        Assertions.assertThat(managedMessageConsumers).hasSize(2);
+        Set<ManagedMessageConsumer> managedMessageConsumers = (Set<ManagedMessageConsumer>) Whitebox.getInternalState(underTest, "messageConsumers");
+        assertThat(managedMessageConsumers).hasSize(2);
 
         // Mock the message consumers
         ManagedMessageConsumer messageConsumer1 = Mockito.mock(ManagedMessageConsumer.class);
         ManagedMessageConsumer messageConsumer2 = Mockito.mock(ManagedMessageConsumer.class);
-        Whitebox.setInternalState(underTest, "managedMessageConsumers", Lists.newArrayList(messageConsumer1, messageConsumer2));
+        Whitebox.setInternalState(underTest, "messageConsumers", Sets.newConcurrentHashSet(Lists.newArrayList(messageConsumer1, messageConsumer2)));
 
         // reset the connection and the message consumers on cascade
         underTest.reset();
         actualSession = (Session) Whitebox.getInternalState(underTest, "session");
-        Assertions.assertThat(actualSession).isNull();
+        assertThat(actualSession).isNull();
         Mockito.verify(messageConsumer1, Mockito.times(1)).reset();
         Mockito.verify(messageConsumer2, Mockito.times(1)).reset();
     }
@@ -67,7 +72,7 @@ public class ManagedSessionTest {
         // Mock
         ManagedMessageConsumer messageConsumer1 = Mockito.mock(ManagedMessageConsumer.class);
         ManagedMessageConsumer messageConsumer2 = Mockito.mock(ManagedMessageConsumer.class);
-        Whitebox.setInternalState(underTest, "managedMessageConsumers", Lists.newArrayList(messageConsumer1, messageConsumer2));
+        Whitebox.setInternalState(underTest, "messageConsumers", Sets.newConcurrentHashSet(Lists.newArrayList(messageConsumer1, messageConsumer2)));
         Mockito.when(connection.createSession(true, Session.AUTO_ACKNOWLEDGE)).thenReturn(session);
 
         // Create two consumers
@@ -80,10 +85,18 @@ public class ManagedSessionTest {
         // refresh session
         underTest.refresh(connection);
         Session actualSession = (Session) Whitebox.getInternalState(underTest, "session");
-        Assertions.assertThat(actualSession).isNotNull();
+        assertThat(actualSession).isNotNull();
 
         // refresh consumers on cascade
         Mockito.verify(messageConsumer1, Mockito.times(1)).refresh(actualSession);
         Mockito.verify(messageConsumer2, Mockito.times(1)).refresh(actualSession);
+    }
+
+    @Test
+    public void consumerIsRemovedFromSessionAfterClose() throws Exception {
+        MessageConsumer consumer = underTest.createConsumer(destination);
+        assertThat((Set<ManagedMessageConsumer>) Whitebox.getInternalState(underTest, "messageConsumers")).containsExactly((ManagedMessageConsumer) consumer);
+        consumer.close();
+        assertThat((Set<ManagedMessageConsumer>) Whitebox.getInternalState(underTest, "messageConsumers")).isEmpty();
     }
 }
