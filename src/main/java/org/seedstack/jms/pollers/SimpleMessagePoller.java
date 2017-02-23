@@ -31,18 +31,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class SimpleMessagePoller implements MessagePoller, Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleMessagePoller.class);
-
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final Timer timer = new Timer();
+    private long receiveTimeout = 30000;
+    private int restartDelay = 10000;
     private Thread thread;
-
     private Session session;
     private ExceptionListener exceptionListener;
     private MessageListener messageListener;
     private MessageConsumer messageConsumer;
-
-    private long receiveTimeout = 30000;
-    private int restartDelay = 10000;
 
     @Override
     public void setSession(Session session) {
@@ -85,7 +82,7 @@ public class SimpleMessagePoller implements MessagePoller, Runnable {
 
     @Override
     public void run() {
-        LOGGER.info("Starting to poll messages for JMS listener {}", messageListener);
+        LOGGER.debug("Starting to poll messages for JMS listener {}", messageListener);
 
         while (active.get()) {
             try {
@@ -120,7 +117,7 @@ public class SimpleMessagePoller implements MessagePoller, Runnable {
                 LOGGER.error("Unable to schedule polling restart for JMS listener {}, consider restarting the poller manually if possible", messageListener);
             }
         } else {
-            LOGGER.info("Stopping to poll messages for JMS listener {}", messageListener, restartDelay);
+            LOGGER.debug("Stopping to poll messages for JMS listener {}", messageListener, restartDelay);
         }
     }
 
@@ -133,7 +130,7 @@ public class SimpleMessagePoller implements MessagePoller, Runnable {
     private class MyTimerTask extends TimerTask {
         private final SimpleMessagePoller poller;
 
-        public MyTimerTask(SimpleMessagePoller poller) {
+        MyTimerTask(SimpleMessagePoller poller) {
             this.poller = poller;
         }
 

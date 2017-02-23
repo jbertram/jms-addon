@@ -1,3 +1,7 @@
+# Version 3.0.1 (2017-02-23)
+
+* [fix] JMS sessions were still tracked after being closed leading to trying to reconnect all sessions used in the past.
+
 # Version 3.0.0 (2016-12-13)
 
 * [brk] Update to SeedStack 16.11 new configuration system.

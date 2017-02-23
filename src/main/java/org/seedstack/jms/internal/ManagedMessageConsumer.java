@@ -25,32 +25,35 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * This session is a facade of a jms messageConsumer. It allows the reconnection mechanism.
  */
 class ManagedMessageConsumer implements MessageConsumer {
-    private static final Logger logger = LoggerFactory.getLogger(ManagedMessageConsumer.class);
-
-    private MessageListener messageListener;
-    private MessageConsumer messageConsumer;
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManagedMessageConsumer.class);
     private final Destination destination;
     private final String messageSelector;
     private final boolean noLocal;
     private final boolean polling;
-    protected final ReentrantReadWriteLock messageConsumerLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock messageConsumerLock = new ReentrantReadWriteLock();
+    private final ManagedSession managedSession;
+    private MessageListener messageListener;
+    private MessageConsumer messageConsumer;
 
-    ManagedMessageConsumer(MessageConsumer messageConsumer, Destination destination, @Nullable String messageSelector, boolean noLocal, boolean polling) {
+    ManagedMessageConsumer(MessageConsumer messageConsumer, Destination destination, @Nullable String messageSelector, boolean noLocal, boolean polling, ManagedSession managedSession) {
         checkNotNull(messageConsumer);
         checkNotNull(destination);
+
+        LOGGER.debug("Creating managed JMS message consumer {}", this);
 
         this.messageConsumer = messageConsumer;
         this.messageSelector = messageSelector;
         this.destination = destination;
         this.noLocal = noLocal;
         this.polling = polling;
+        this.managedSession = managedSession;
     }
 
     void refresh(Session session) throws JMSException {
         messageConsumerLock.writeLock().lock();
         try {
             // Create a new messageConsumer
+            LOGGER.debug("Refreshing managed JMS message consumer {}", this);
             if (this.noLocal) {
                 messageConsumer = session.createConsumer(destination, messageSelector, true);
             } else if (messageSelector != null && !"".equals(messageSelector)) {
@@ -71,7 +74,7 @@ class ManagedMessageConsumer implements MessageConsumer {
     void reset() {
         messageConsumerLock.writeLock().lock();
         try {
-            logger.trace("Resetting message consumer");
+            LOGGER.debug("Resetting managed JMS message consumer {}", this);
             messageConsumer = null;
         } finally {
             messageConsumerLock.writeLock().unlock();
@@ -107,7 +110,12 @@ class ManagedMessageConsumer implements MessageConsumer {
 
     @Override
     public void close() throws JMSException {
-        getMessageConsumer().close();
+        try {
+            LOGGER.debug("Closing managed JMS message consumer {}", this);
+            getMessageConsumer().close();
+        } finally {
+            managedSession.removeMessageConsumer(this);
+        }
     }
 
     @Override

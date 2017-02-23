@@ -15,9 +15,15 @@ import org.mockito.Mock;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.jms.*;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagedMessageConsumerTest {
@@ -28,13 +34,13 @@ public class ManagedMessageConsumerTest {
     @Mock
     private Destination destination;
     @Mock
-    private Session session;
+    private ManagedSession session;
 
     private MyMessageListener messageListener = new MyMessageListener();
 
     @Before
     public void setUp() throws JMSException {
-        underTest = new ManagedMessageConsumer(messageConsumer, destination, null, false, false);
+        underTest = new ManagedMessageConsumer(messageConsumer, destination, null, false, false, session);
         when(session.createConsumer(destination)).thenReturn(messageConsumer);
     }
 
