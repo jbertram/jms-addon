@@ -3,6 +3,9 @@ title: "JMS"
 repo: "https://github.com/seedstack/jms-addon"
 author: Adrien LAUER
 description: "Provides configuration, injection and connection resilience for Java Messaging System 1.1."
+tags:
+    - communication
+    - transactions
 zones:
     - Addons
 menu:
