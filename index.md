@@ -1,5 +1,6 @@
 ---
 title: "JMS"
+addon: "JMS"
 repo: "https://github.com/seedstack/jms-addon"
 author: Adrien LAUER
 description: "Provides configuration, injection and connection resilience for Java Messaging System 1.1."
@@ -8,9 +9,7 @@ tags:
     - transactions
 zones:
     - Addons
-menu:
-    AddonJMS:
-        weight: 10
+noMenu: true    
 ---
 
 Java Message Service (JMS) is a Java API that allows applications to create, send, receive, and read messages.
@@ -19,7 +18,7 @@ SeedStack JMS add-on provides a JMS 1.1 integration (JSR 914).<!--more-->
 It automatically manages connection factories, connections, sessions and message consumers/listeners while retaining the 
 standard JMS API. It also transparently handles refresh of connections and sessions after a JMS failure.
 
-# Dependency
+## Dependency
 
 {{< dependency g="org.seedstack.addons.jms" a="jms" >}}
 
@@ -31,9 +30,9 @@ You may need to add the JMS specification dependency in modules that don't inclu
 
 {{< dependency g="javax.jms" a="jms-api" v="1.1-rev-1" s="provided" >}}
 
-# Configuration
+## Configuration
 
-## Connection factories
+### Connection factories
 
 {{% config p="jms.connectionsFactories" %}}
 ```yaml
@@ -56,7 +55,7 @@ jms:
 ```
 {{% /config %}}    
 
-## Connections
+### Connections
 
 {{% config p="jms.connections" %}}
 ```yaml
@@ -96,7 +95,7 @@ jms:
 ```
 {{% /config %}}  
 
-## JEE mode
+### JEE mode
 
 In a strict JEE environment, some JMS methods are forbidden (refer to the EE.6.7 section of the JavaEE platform specification).
 When the JEE mode is enabled on a connection, the forbidden methods are not invoked. 
@@ -104,7 +103,7 @@ When the JEE mode is enabled on a connection, the forbidden methods are not invo
 The major downside is that it prevents using asynchronous message reception. SeedStack will use message polling instead, 
 so a message poller must be configured on the message listener when in JEE mode.
 
-## Example
+### Example
 
 Assuming that we are using [Apache ActiveMQ](http://activemq.apache.org/), the following configuration will declare a
 JMS connection named `connection1` using the connection factory `connectionFactory1`:
@@ -121,9 +120,9 @@ jms:
       connectionFactory: connectionFactory1
 ```
 
-# Sending messages
+## Sending messages
 
-## Injecting a session 
+### Injecting a session 
 
 The simplest way to send messages is to inject a {{< java "javax.jms.Session" >}}:
 
@@ -149,7 +148,7 @@ public class SomeClass {
 The session object is managed by SeedStack, its usage is thread-safe and there is no need to close it. 
 {{% /callout %}}
 
-## Injecting a connection
+### Injecting a connection
 
 For more control, a connection can be injected directly inject and used to manually create all needed objects to send a message.
 In this case, only the connection is managed by SeedStack and you are responsible for properly closing the objects you
@@ -176,7 +175,7 @@ public class SomeClass {
 }
 ```
 
-## Automatic reconnection
+### Automatic reconnection
 
 When you inject a session or a connection and managed mode is enabled for the connection, SeedStack will inject
 managed objects which embed a reconnection mechanism. 
@@ -185,7 +184,7 @@ On such objects, creating a producer or sending a message when the connection is
 When the connection is up again, objects are refreshed automatically and can be used again. Note that it is still up to you to 
 handle the retry policy of the sent message.
 
-# Receiving messages
+## Receiving messages
 
 To receive JMS messages, create a message listener class implementing the {{< java "javax.jms.MessageListener" >}} interface 
 and annotated with {{< java "org.seedstack.jms.JmsMessageListener" "@" >}}:
@@ -223,7 +222,7 @@ Reception is automatically done in a transacted session if a {{< java "org.seeds
 annotation is present on the `onMessage()` method or on the listener class.
 {{% /callout %}}
 
-## Simple message poller
+### Simple message poller
 
 If polling is needed on a particular listener you may use the {{< java "org.seedstack.jms.pollers.SimpleMessagePoller" >}} class for
 basic polling needs. 
@@ -237,7 +236,7 @@ restart 10 seconds later. When used in conjunction with the automatic reconnecti
 connection refresh. In that case, the poller may retry to receive messages several times before the connection is up 
 again, depending on the configured connection refresh timeout.
 
-## Custom poller
+### Custom poller
 
 A customer poller can be created by implementing the {{< java "org.seedstack.jms.MessagePoller" >}} interface:
 
