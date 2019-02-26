@@ -105,7 +105,9 @@ so a message poller must be configured on the message listener when in JEE mode.
 
 ### Example
 
-Assuming that we are using [Apache ActiveMQ](http://activemq.apache.org/), the following configuration will declare a
+#### Active MQ
+
+Assuming that we are using [Apache ActiveMQ](http://activemq.apache.org/), the following configuration declares a
 JMS connection named `connection1` using the connection factory `connectionFactory1`:
 
 ```yaml
@@ -118,6 +120,26 @@ jms:
   connections:
     connection1:
       connectionFactory: connectionFactory1
+```
+
+#### WebSphere MQ
+
+The following configuration does the same on [IBM MQ](https://www.ibm.com/products/mq) in client mode (TCP/IP):
+
+```yaml
+jms:
+  connectionFactories:
+    connectionFactory1:
+      vendorClass: com.ibm.mq.jms.MQConnectionFactory
+      vendorProperties:
+      	queueManager: ...
+      	hostName: ...
+      	channel: ...
+      	port: 1414
+      	transportType: 1        
+  connections:
+  	connection1:
+  	  connectionFactory: connectionFactory1
 ```
 
 ## Sending messages
