@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,26 +7,25 @@
  */
 package org.seedstack.jms.internal;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import java.util.Set;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Session;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.seedstack.jms.Whitebox;
 import org.seedstack.jms.spi.ConnectionDefinition;
-
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Session;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagedConnectionTest {
@@ -43,11 +42,18 @@ public class ManagedConnectionTest {
 
     @Before
     public void setUp() throws JMSException {
-        ConnectionDefinition connectionDefinition = new ConnectionDefinition("my-connection", connectionFactory, true, true, true, "test-client-id", "user", "password", 100, null, null);
-        Mockito.when(connectionFactory.createConnection("user", "password")).thenReturn(connection);
+        ConnectionDefinition connectionDefinition = new ConnectionDefinition("my-connection",
+                connectionFactory,
+                true,
+                true,
+                true,
+                "test-client-id",
+                "user",
+                "password",
+                100,
+                null,
+                null);
         Mockito.when(connection.createSession(true, Session.AUTO_ACKNOWLEDGE)).thenReturn(Mockito.mock(Session.class));
-        Mockito.when(connection.getClientID()).thenReturn("my-app-my-connection");
-        Mockito.when(connection.getExceptionListener()).thenReturn(exceptionListener);
         Mockito.when(jmsFactoryImpl.createRawConnection(connectionDefinition)).thenReturn(connection);
         underTest = new ManagedConnection(connectionDefinition, jmsFactoryImpl);
     }
@@ -93,7 +99,8 @@ public class ManagedConnectionTest {
         underTest.setExceptionListener(exceptionListener);
         Connection jmsConnection = (Connection) Whitebox.getInternalState(underTest, "connection");
         javax.jms.ExceptionListener exceptionListenerAQ = jmsConnection.getExceptionListener();
-        javax.jms.ExceptionListener exceptionListenerMC = (ExceptionListener) Whitebox.getInternalState(underTest, "exceptionListener");
+        javax.jms.ExceptionListener exceptionListenerMC = (ExceptionListener) Whitebox.getInternalState(underTest,
+                "exceptionListener");
         Assertions.assertThat(exceptionListenerAQ).isNotEqualTo(exceptionListenerMC);
         Assertions.assertThat(exceptionListenerMC).isEqualTo(exceptionListener);
     }
@@ -101,7 +108,8 @@ public class ManagedConnectionTest {
     @Test
     public void consumerIsRemovedFromSessionAfterClose() throws Exception {
         Session session = underTest.createSession(true, Session.AUTO_ACKNOWLEDGE);
-        assertThat((Set<ManagedSession>) Whitebox.getInternalState(underTest, "sessions")).containsExactly((ManagedSession) session);
+        assertThat((Set<ManagedSession>) Whitebox.getInternalState(underTest,
+                "sessions")).containsExactly((ManagedSession) session);
         session.close();
         assertThat((Set<ManagedSession>) Whitebox.getInternalState(underTest, "sessions")).isEmpty();
     }

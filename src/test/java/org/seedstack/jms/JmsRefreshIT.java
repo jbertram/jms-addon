@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,11 +7,18 @@
  */
 package org.seedstack.jms;
 
-import net.jcip.annotations.NotThreadSafe;
+import static org.fest.reflect.core.Reflection.method;
+import static org.junit.Assert.fail;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.jms.Connection;
+import javax.jms.JMSException;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.internal.util.reflection.Whitebox;
 import org.seedstack.jms.fixtures.TestExceptionListener;
 import org.seedstack.jms.fixtures.TestSender3;
 import org.seedstack.jms.fixtures.TestSender4;
@@ -19,21 +26,10 @@ import org.seedstack.jms.internal.FakeConnectionFactoryImpl;
 import org.seedstack.jms.spi.ConnectionDefinition;
 import org.seedstack.jms.spi.JmsFactory;
 import org.seedstack.seed.Logging;
-import org.seedstack.seed.it.SeedITRunner;
+import org.seedstack.seed.testing.junit4.SeedITRunner;
 import org.slf4j.Logger;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.fest.reflect.core.Reflection.method;
-import static org.junit.Assert.fail;
-
 @RunWith(SeedITRunner.class)
-@NotThreadSafe
 public class JmsRefreshIT {
 
     // TODO <pith> 19/11/2014: improve these tests.
@@ -68,7 +64,9 @@ public class JmsRefreshIT {
         // Reset connection
 
         connection3.close();
-        method("onException").withParameterTypes(JMSException.class).in(connection3).invoke(new JMSException("Connection is down"));
+        method("onException").withParameterTypes(JMSException.class)
+                .in(connection3)
+                .invoke(new JMSException("Connection is down"));
         //Thread.sleep(200); // reconnect at the first try
 
         // Refresh connection and resend message
@@ -87,8 +85,6 @@ public class JmsRefreshIT {
         latchReconnect1.await(200, TimeUnit.MILLISECONDS);
         Assertions.assertThat(text).isEqualTo("RECONNECTED1"); // message is successfully received
     }
-
-
 
     @Test
     public void connection_failed_multiple_times_then_reconnect() throws InterruptedException, JMSException {
@@ -121,10 +117,12 @@ public class JmsRefreshIT {
 
     @Test
     public void test_that_wraped_exceptionlistener_from_managedConnection_is_declared_using_props() throws InterruptedException, JMSException {
-        Class<? extends javax.jms.ExceptionListener> exceptionListener = ((ConnectionDefinition) Whitebox.getInternalState(connection3, "connectionDefinition")).getExceptionListenerClass();
+        Class<? extends javax.jms.ExceptionListener> exceptionListener =
+                ((ConnectionDefinition) Whitebox.getInternalState(
+                        connection3,
+                        "connectionDefinition")).getExceptionListenerClass();
         Assertions.assertThat(exceptionListener).isAssignableFrom(TestExceptionListener.class);
     }
-
 
     //                  MANUAL TESTS
     //

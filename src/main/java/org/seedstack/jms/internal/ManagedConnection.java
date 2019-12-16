@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,11 +7,15 @@
  */
 package org.seedstack.jms.internal;
 
-import com.google.common.collect.Sets;
-import org.seedstack.jms.spi.ConnectionDefinition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Sets;
+import java.util.Calendar;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jms.Connection;
 import javax.jms.ConnectionConsumer;
 import javax.jms.ConnectionMetaData;
@@ -21,14 +25,9 @@ import javax.jms.JMSException;
 import javax.jms.ServerSessionPool;
 import javax.jms.Session;
 import javax.jms.Topic;
-import java.util.Calendar;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.seedstack.jms.spi.ConnectionDefinition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This connection is a facade to the actual jms connection. It provides the reconnection mechanism.
@@ -89,7 +88,9 @@ class ManagedConnection implements Connection, ExceptionListener {
                         scheduleInProgress.set(false);
                     }
                 } catch (Exception e) {
-                    LOGGER.error("Failed to restart managed JMS connection {}, next attempt in {} ms", connectionDefinition.getName(), connectionDefinition.getReconnectionDelay());
+                    LOGGER.error("Failed to restart managed JMS connection {}, next attempt in {} ms",
+                            connectionDefinition.getName(),
+                            connectionDefinition.getReconnectionDelay());
                     scheduleReconnection();
                 } finally {
                     connectionLock.writeLock().unlock();
@@ -135,7 +136,9 @@ class ManagedConnection implements Connection, ExceptionListener {
             LOGGER.debug("Managed JMS connection {} already scheduled for restart", connectionDefinition.getName());
         } else {
             // reset the connection
-            LOGGER.warn("Resetting managed JMS connection {} and scheduling restart in {} ms", connectionDefinition.getName(), connectionDefinition.getReconnectionDelay());
+            LOGGER.warn("Resetting managed JMS connection {} and scheduling restart in {} ms",
+                    connectionDefinition.getName(),
+                    connectionDefinition.getReconnectionDelay());
 
             connectionLock.writeLock().lock();
             try {
@@ -149,7 +152,8 @@ class ManagedConnection implements Connection, ExceptionListener {
                     try {
                         connection.close();
                     } catch (JMSException e) {
-                        LOGGER.warn("Unable to cleanly close the managed JMS connection {}", connectionDefinition.getName());
+                        LOGGER.warn("Unable to cleanly close the managed JMS connection {}",
+                                connectionDefinition.getName());
                     }
                 }
                 connection = null;
@@ -182,13 +186,19 @@ class ManagedConnection implements Connection, ExceptionListener {
     }
 
     @Override
-    public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+    public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
+            ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         return getConnection().createConnectionConsumer(destination, messageSelector, sessionPool, maxMessages);
     }
 
     @Override
-    public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        return getConnection().createDurableConnectionConsumer(topic, subscriptionName, messageSelector, sessionPool, maxMessages);
+    public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
+            String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+        return getConnection().createDurableConnectionConsumer(topic,
+                subscriptionName,
+                messageSelector,
+                sessionPool,
+                maxMessages);
     }
 
     @Override

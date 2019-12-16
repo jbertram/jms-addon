@@ -1,3 +1,7 @@
+# Version 3.1.0 (2019-12-20)
+
+* [new] Support disabling JMS listeners by setting destination type to "DISABLED". This can be substituted with configuration with the `destinationTypeStr` annotation parameter.
+
 # Version 3.0.1 (2017-02-23)
 
 * [fix] JMS sessions were still tracked after being closed leading to trying to reconnect all sessions used in the past.

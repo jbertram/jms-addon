@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,23 +7,23 @@
  */
 package org.seedstack.jms;
 
+import static org.junit.Assert.fail;
+
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import javax.jms.Connection;
+import javax.jms.JMSException;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.jms.fixtures.TestSender1;
 import org.seedstack.jms.fixtures.TestSender2;
-import org.seedstack.seed.it.SeedITRunner;
-
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.fail;
+import org.seedstack.jms.fixtures.TestSenderErr;
+import org.seedstack.seed.testing.junit4.SeedITRunner;
 
 @RunWith(SeedITRunner.class)
 public class JmsBaseIT {
@@ -33,6 +33,9 @@ public class JmsBaseIT {
 
     @Inject
     TestSender2 testSender2;
+
+    @Inject
+    TestSenderErr testSenderErr;
 
     @Inject
     Injector injector;
@@ -75,8 +78,18 @@ public class JmsBaseIT {
         }
     }
 
+    /**
+     * TestSenderErr and TestMessageListenerErr.
+     */
+    @Test
+    public void managed_send_and_receive_failure() throws JMSException, InterruptedException {
+        testSenderErr.send("MANAGED");
+        Thread.sleep(1000);
+    }
+
     @Test
     public void connections_are_singletons() throws JMSException {
-        Assertions.assertThat(injector.getInstance(Key.get(Connection.class, Names.named("connection1")))).isSameAs(injector.getInstance(Key.get(Connection.class, Names.named("connection1"))));
+        Assertions.assertThat(injector.getInstance(Key.get(Connection.class, Names.named("connection1"))))
+                .isSameAs(injector.getInstance(Key.get(Connection.class, Names.named("connection1"))));
     }
 }

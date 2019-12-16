@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,23 +7,22 @@
  */
 package org.seedstack.jms.internal;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import java.util.Set;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.seedstack.jms.Whitebox;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagedSessionTest {
@@ -51,13 +50,17 @@ public class ManagedSessionTest {
         // Create two consumers
         underTest.createConsumer(destination);
         underTest.createConsumer(destination);
-        Set<ManagedMessageConsumer> managedMessageConsumers = (Set<ManagedMessageConsumer>) Whitebox.getInternalState(underTest, "messageConsumers");
+        Set<ManagedMessageConsumer> managedMessageConsumers = (Set<ManagedMessageConsumer>) Whitebox.getInternalState(
+                underTest,
+                "messageConsumers");
         assertThat(managedMessageConsumers).hasSize(2);
 
         // Mock the message consumers
         ManagedMessageConsumer messageConsumer1 = Mockito.mock(ManagedMessageConsumer.class);
         ManagedMessageConsumer messageConsumer2 = Mockito.mock(ManagedMessageConsumer.class);
-        Whitebox.setInternalState(underTest, "messageConsumers", Sets.newConcurrentHashSet(Lists.newArrayList(messageConsumer1, messageConsumer2)));
+        Whitebox.setInternalState(underTest,
+                "messageConsumers",
+                Sets.newConcurrentHashSet(Lists.newArrayList(messageConsumer1, messageConsumer2)));
 
         // reset the connection and the message consumers on cascade
         underTest.reset();
@@ -72,7 +75,9 @@ public class ManagedSessionTest {
         // Mock
         ManagedMessageConsumer messageConsumer1 = Mockito.mock(ManagedMessageConsumer.class);
         ManagedMessageConsumer messageConsumer2 = Mockito.mock(ManagedMessageConsumer.class);
-        Whitebox.setInternalState(underTest, "messageConsumers", Sets.newConcurrentHashSet(Lists.newArrayList(messageConsumer1, messageConsumer2)));
+        Whitebox.setInternalState(underTest,
+                "messageConsumers",
+                Sets.newConcurrentHashSet(Lists.newArrayList(messageConsumer1, messageConsumer2)));
         Mockito.when(connection.createSession(true, Session.AUTO_ACKNOWLEDGE)).thenReturn(session);
 
         // Create two consumers
@@ -95,7 +100,8 @@ public class ManagedSessionTest {
     @Test
     public void consumerIsRemovedFromSessionAfterClose() throws Exception {
         MessageConsumer consumer = underTest.createConsumer(destination);
-        assertThat((Set<ManagedMessageConsumer>) Whitebox.getInternalState(underTest, "messageConsumers")).containsExactly((ManagedMessageConsumer) consumer);
+        assertThat((Set<ManagedMessageConsumer>) Whitebox.getInternalState(underTest,
+                "messageConsumers")).containsExactly((ManagedMessageConsumer) consumer);
         consumer.close();
         assertThat((Set<ManagedMessageConsumer>) Whitebox.getInternalState(underTest, "messageConsumers")).isEmpty();
     }

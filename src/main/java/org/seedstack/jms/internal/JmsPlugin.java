@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,10 +7,26 @@
  */
 package org.seedstack.jms.internal;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Lists;
 import io.nuun.kernel.api.plugin.InitState;
 import io.nuun.kernel.api.plugin.context.InitContext;
 import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.Session;
+import javax.naming.Context;
 import org.apache.commons.lang.StringUtils;
 import org.kametic.specifications.Specification;
 import org.seedstack.jms.DestinationType;
@@ -29,23 +45,6 @@ import org.seedstack.seed.core.internal.transaction.TransactionPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.Session;
-import javax.naming.Context;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * This plugin provides JMS support through JNDI or plain configuration.
  */
@@ -57,11 +56,13 @@ public class JmsPlugin extends AbstractSeedPlugin {
     private static final String ERROR_DESTINATION_TYPE = "destinationType";
 
     @SuppressWarnings("unchecked")
-    private final Specification<Class<?>> messageListenerSpec = and(classImplements(MessageListener.class), classAnnotatedWith(JmsMessageListener.class));
+    private final Specification<Class<?>> messageListenerSpec = and(classImplements(MessageListener.class),
+            classAnnotatedWith(JmsMessageListener.class));
     private final Specification<Class<?>> exceptionListenerSpec = classImplements(ExceptionListener.class);
     private final Specification<Class<?>> exceptionHandlerSpec = classImplements(JmsExceptionHandler.class);
 
-    private final ConcurrentMap<String, MessageListenerDefinition> messageListenerDefinitions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, MessageListenerDefinition> messageListenerDefinitions =
+            new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ConnectionDefinition> connectionDefinitions = new ConcurrentHashMap<>();
 
     private final ConcurrentMap<String, Connection> connections = new ConcurrentHashMap<>();
@@ -107,7 +108,8 @@ public class JmsPlugin extends AbstractSeedPlugin {
             try {
                 connection.getValue().start();
             } catch (JMSException e) {
-                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_START_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, connection.getKey());
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_START_JMS_CONNECTION)
+                        .put(ERROR_CONNECTION_NAME, connection.getKey());
             }
         }
 
@@ -152,10 +154,13 @@ public class JmsPlugin extends AbstractSeedPlugin {
     private void configureConnections(JmsConfig jmsConfig) {
         for (Map.Entry<String, JmsConfig.ConnectionConfig> entry : jmsConfig.getConnections().entrySet()) {
             try {
-                ConnectionDefinition connectionDefinition = jmsFactory.createConnectionDefinition(entry.getKey(), entry.getValue(), null);
+                ConnectionDefinition connectionDefinition = jmsFactory.createConnectionDefinition(entry.getKey(),
+                        entry.getValue(),
+                        null);
                 registerConnection(jmsFactory.createConnection(connectionDefinition), connectionDefinition);
             } catch (JMSException e) {
-                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, entry.getKey());
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_JMS_CONNECTION)
+                        .put(ERROR_CONNECTION_NAME, entry.getKey());
             }
         }
     }
@@ -168,37 +173,11 @@ public class JmsPlugin extends AbstractSeedPlugin {
                 String messageListenerName = messageListenerClass.getCanonicalName();
                 JmsMessageListener annotation = messageListenerClass.getAnnotation(JmsMessageListener.class);
 
-                boolean isTransactional;
-                try {
-                    isTransactional = transactionPlugin.isTransactional(messageListenerClass.getMethod("onMessage", Message.class));
-                } catch (NoSuchMethodException e) {
-                    throw SeedException.wrap(e, JmsErrorCode.INVALID_MESSAGE_LISTENER_CLASS)
-                            .put("messageListenerClass", messageListenerClass.getName());
-                }
-
-                Connection listenerConnection = connections.get(annotation.connection());
-
-                if (listenerConnection == null) {
-                    throw SeedException.createNew(JmsErrorCode.MISSING_CONNECTION_FACTORY)
-                            .put(ERROR_CONNECTION_NAME, annotation.connection())
-                            .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
-                }
-
-                Session session;
-                try {
-                    session = listenerConnection.createSession(isTransactional, Session.AUTO_ACKNOWLEDGE);
-                } catch (JMSException e) {
-                    throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_SESSION)
-                            .put(ERROR_CONNECTION_NAME, annotation.connection())
-                            .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
-                }
-
-                Destination destination;
                 DestinationType destinationType;
-
                 if (!annotation.destinationTypeStr().isEmpty()) {
                     try {
-                        destinationType = DestinationType.valueOf(application.substituteWithConfiguration(annotation.destinationTypeStr()));
+                        destinationType =
+                                DestinationType.valueOf(application.substituteWithConfiguration(annotation.destinationTypeStr()));
                     } catch (IllegalArgumentException e) {
                         throw SeedException.wrap(e, JmsErrorCode.UNKNOWN_DESTINATION_TYPE)
                                 .put(ERROR_DESTINATION_TYPE, annotation.destinationTypeStr())
@@ -208,55 +187,91 @@ public class JmsPlugin extends AbstractSeedPlugin {
                 } else {
                     destinationType = annotation.destinationType();
                 }
-                try {
-                    switch (destinationType) {
-                        case QUEUE:
-                            destination = session.createQueue(application.substituteWithConfiguration(annotation.destinationName()));
-                            break;
-                        case TOPIC:
-                            destination = session.createTopic(application.substituteWithConfiguration(annotation.destinationName()));
-                            break;
-                        default:
-                            throw SeedException.createNew(JmsErrorCode.UNKNOWN_DESTINATION_TYPE)
-                                    .put(ERROR_DESTINATION_TYPE, destinationType)
-                                    .put(ERROR_CONNECTION_NAME, annotation.connection())
-                                    .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
+
+                if (destinationType != DestinationType.DISABLED) {
+                    boolean isTransactional;
+                    try {
+                        isTransactional = transactionPlugin.isTransactional(messageListenerClass.getMethod("onMessage",
+                                Message.class));
+                    } catch (NoSuchMethodException e) {
+                        throw SeedException.wrap(e, JmsErrorCode.INVALID_MESSAGE_LISTENER_CLASS)
+                                .put("messageListenerClass", messageListenerClass.getName());
                     }
-                } catch (JMSException e) {
-                    throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_DESTINATION)
-                            .put(ERROR_DESTINATION_TYPE, destinationType.name())
-                            .put(ERROR_CONNECTION_NAME, annotation.connection())
-                            .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
-                }
 
-                Class<? extends MessagePoller> messagePollerClass = null;
-                if (annotation.poller().length > 0) {
-                    messagePollerClass = annotation.poller()[0];
-                }
+                    Connection listenerConnection = connections.get(annotation.connection());
 
-                registerMessageListener(
-                        new MessageListenerDefinition(
-                                messageListenerName,
-                                application.substituteWithConfiguration(annotation.connection()),
-                                session,
-                                destination,
-                                application.substituteWithConfiguration(annotation.selector()),
-                                messageListenerClass,
-                                messagePollerClass
-                        )
-                );
+                    if (listenerConnection == null) {
+                        throw SeedException.createNew(JmsErrorCode.MISSING_CONNECTION_FACTORY)
+                                .put(ERROR_CONNECTION_NAME, annotation.connection())
+                                .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
+                    }
+
+                    Session session;
+                    try {
+                        session = listenerConnection.createSession(isTransactional, Session.AUTO_ACKNOWLEDGE);
+                    } catch (JMSException e) {
+                        throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_SESSION)
+                                .put(ERROR_CONNECTION_NAME, annotation.connection())
+                                .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
+                    }
+
+                    Destination destination;
+                    try {
+                        switch (destinationType) {
+                            case QUEUE:
+                                destination =
+                                        session.createQueue(application.substituteWithConfiguration(annotation.destinationName()));
+                                break;
+                            case TOPIC:
+                                destination =
+                                        session.createTopic(application.substituteWithConfiguration(annotation.destinationName()));
+                                break;
+                            default:
+                                throw SeedException.createNew(JmsErrorCode.UNKNOWN_DESTINATION_TYPE)
+                                        .put(ERROR_DESTINATION_TYPE, destinationType)
+                                        .put(ERROR_CONNECTION_NAME, annotation.connection())
+                                        .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
+                        }
+                    } catch (JMSException e) {
+                        throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_DESTINATION)
+                                .put(ERROR_DESTINATION_TYPE, destinationType.name())
+                                .put(ERROR_CONNECTION_NAME, annotation.connection())
+                                .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerName);
+                    }
+
+                    Class<? extends MessagePoller> messagePollerClass = null;
+                    if (annotation.poller().length > 0) {
+                        messagePollerClass = annotation.poller()[0];
+                    }
+
+                    registerMessageListener(
+                            new MessageListenerDefinition(
+                                    messageListenerName,
+                                    application.substituteWithConfiguration(annotation.connection()),
+                                    session,
+                                    destination,
+                                    application.substituteWithConfiguration(annotation.selector()),
+                                    messageListenerClass,
+                                    messagePollerClass
+                            )
+                    );
+                } else {
+                    LOGGER.info("Skipping explicitly disabled JMS listener {}", messageListenerClass.getName());
+                }
             }
         }
     }
 
-    private MessageConsumer createMessageConsumer(MessageListenerDefinition messageListenerDefinition) throws JMSException {
+    private MessageConsumer createMessageConsumer(
+            MessageListenerDefinition messageListenerDefinition) throws JMSException {
         LOGGER.debug("Creating JMS consumer for listener {}", messageListenerDefinition.getName());
 
         MessageConsumer consumer;
         Session session = messageListenerDefinition.getSession();
 
         if (StringUtils.isNotBlank(messageListenerDefinition.getSelector())) {
-            consumer = session.createConsumer(messageListenerDefinition.getDestination(), messageListenerDefinition.getSelector());
+            consumer = session.createConsumer(messageListenerDefinition.getDestination(),
+                    messageListenerDefinition.getSelector());
         } else {
             consumer = session.createConsumer(messageListenerDefinition.getDestination());
         }
@@ -279,7 +294,8 @@ public class JmsPlugin extends AbstractSeedPlugin {
                     messagePoller.setExceptionListener(connection.getExceptionListener());
                 }
             } catch (Exception e) {
-                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_POLLER).put("pollerClass", messageListenerDefinition.getPoller());
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_POLLER)
+                        .put("pollerClass", messageListenerDefinition.getPoller());
             }
 
             pollers.put(messageListenerDefinition.getName(), messagePoller);
@@ -301,18 +317,21 @@ public class JmsPlugin extends AbstractSeedPlugin {
         checkNotNull(connectionDefinition);
 
         if (this.connectionDefinitions.putIfAbsent(connectionDefinition.getName(), connectionDefinition) != null) {
-            throw SeedException.createNew(JmsErrorCode.DUPLICATE_CONNECTION_NAME).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
+            throw SeedException.createNew(JmsErrorCode.DUPLICATE_CONNECTION_NAME)
+                    .put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
         }
 
         if (this.connections.putIfAbsent(connectionDefinition.getName(), connection) != null) {
-            throw SeedException.createNew(JmsErrorCode.DUPLICATE_CONNECTION_NAME).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
+            throw SeedException.createNew(JmsErrorCode.DUPLICATE_CONNECTION_NAME)
+                    .put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
         }
 
         if (shouldStartConnections.get()) {
             try {
                 connection.start();
             } catch (JMSException e) {
-                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_START_JMS_CONNECTION).put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
+                throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_START_JMS_CONNECTION)
+                        .put(ERROR_CONNECTION_NAME, connectionDefinition.getName());
             }
         }
     }
@@ -325,7 +344,8 @@ public class JmsPlugin extends AbstractSeedPlugin {
     public void registerMessageListener(MessageListenerDefinition messageListenerDefinition) {
         checkNotNull(messageListenerDefinition);
 
-        ConnectionDefinition connectionDefinition = connectionDefinitions.get(messageListenerDefinition.getConnectionName());
+        ConnectionDefinition connectionDefinition =
+                connectionDefinitions.get(messageListenerDefinition.getConnectionName());
         if (connectionDefinition.isJeeMode() && messageListenerDefinition.getPoller() == null) {
             throw SeedException.createNew(JmsErrorCode.MESSAGE_POLLER_REQUIRED_IN_JEE_MODE)
                     .put(ERROR_CONNECTION_NAME, connectionDefinition.getName())
@@ -339,7 +359,8 @@ public class JmsPlugin extends AbstractSeedPlugin {
                     .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
         }
 
-        if (messageListenerDefinitions.putIfAbsent(messageListenerDefinition.getName(), messageListenerDefinition) != null) {
+        if (messageListenerDefinitions.putIfAbsent(messageListenerDefinition.getName(),
+                messageListenerDefinition) != null) {
             throw SeedException.createNew(JmsErrorCode.DUPLICATE_MESSAGE_LISTENER_NAME)
                     .put(ERROR_MESSAGE_LISTENER_NAME, messageListenerDefinition.getName());
         }

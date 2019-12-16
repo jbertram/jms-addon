@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,24 +7,27 @@
  */
 package org.seedstack.jms.fixtures;
 
+import javax.inject.Inject;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 import org.seedstack.jms.JmsConnection;
-import org.seedstack.seed.it.ITBind;
+import org.seedstack.seed.Bind;
 import org.seedstack.seed.transaction.Transactional;
 
-import javax.inject.Inject;
-import javax.jms.*;
-
-@ITBind
-public class TestSender4 implements TestSender {
+@Bind
+public class TestSenderErr implements TestSender {
 
     @Inject
     private Session session;
 
     @Transactional
-    @JmsConnection("connection4")
+    @JmsConnection("connection3")
     public void send(String stringMessage) throws JMSException {
         // Queue
-        Destination queue = session.createQueue("queue4");
+        Destination queue = session.createQueue("queueErr");
         //create Message
         TextMessage message1 = session.createTextMessage();
         message1.setText(stringMessage);
