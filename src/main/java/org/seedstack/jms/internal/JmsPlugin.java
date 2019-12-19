@@ -5,6 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.jms.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -42,6 +43,7 @@ import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.AbstractSeedPlugin;
 import org.seedstack.seed.core.internal.jndi.JndiPlugin;
 import org.seedstack.seed.core.internal.transaction.TransactionPlugin;
+import org.seedstack.shed.reflect.Classes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -283,7 +285,7 @@ public class JmsPlugin extends AbstractSeedPlugin {
 
                 Connection connection = connections.get(messageListenerDefinition.getConnectionName());
 
-                messagePoller = messageListenerDefinition.getPoller().newInstance();
+                messagePoller = Classes.instantiateDefault(messageListenerDefinition.getPoller());
                 messagePoller.setSession(session);
                 messagePoller.setMessageConsumer(consumer);
                 messagePoller.setMessageListener(new MessageListenerAdapter(messageListenerDefinition.getName()));
@@ -293,7 +295,7 @@ public class JmsPlugin extends AbstractSeedPlugin {
                 } else {
                     messagePoller.setExceptionListener(connection.getExceptionListener());
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 throw SeedException.wrap(e, JmsErrorCode.UNABLE_TO_CREATE_POLLER)
                         .put("pollerClass", messageListenerDefinition.getPoller());
             }

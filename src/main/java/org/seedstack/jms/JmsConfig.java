@@ -5,17 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.jms;
 
-import org.seedstack.coffig.Config;
-import org.seedstack.jms.spi.JmsExceptionHandler;
-
-import javax.jms.ConnectionFactory;
-import javax.jms.ExceptionListener;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import javax.jms.ConnectionFactory;
+import javax.jms.ExceptionListener;
+import org.seedstack.coffig.Config;
+import org.seedstack.jms.spi.JmsExceptionHandler;
 import org.seedstack.seed.validation.NotBlank;
 
 @Config("jms")
@@ -133,6 +134,7 @@ public class JmsConfig {
             return this;
         }
 
+        @SuppressFBWarnings(value = "NM_CONFUSING", justification = "Stupid check")
         public String getClientId() {
             return clientId;
         }

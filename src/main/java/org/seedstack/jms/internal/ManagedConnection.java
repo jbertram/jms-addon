@@ -87,7 +87,7 @@ class ManagedConnection implements Connection, ExceptionListener {
                         connection.start();
                         scheduleInProgress.set(false);
                     }
-                } catch (Exception e) {
+                } catch (JMSException | RuntimeException e) {
                     LOGGER.error("Failed to restart managed JMS connection {}, next attempt in {} ms",
                             connectionDefinition.getName(),
                             connectionDefinition.getReconnectionDelay());

@@ -7,23 +7,16 @@
  */
 package org.seedstack.jms.internal;
 
-
-import org.seedstack.seed.transaction.spi.TransactionalLink;
-
-import javax.jms.Session;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import javax.jms.Session;
+import org.seedstack.seed.transaction.spi.TransactionalLink;
 
 class JmsSessionLink implements TransactionalLink<Session> {
     private final ThreadLocal<Deque<Session>> sessionThreadLocal;
 
     JmsSessionLink() {
-        sessionThreadLocal = new ThreadLocal<Deque<Session>>() {
-            @Override
-            protected Deque<Session> initialValue() {
-                return new ArrayDeque<>();
-            }
-        };
+        sessionThreadLocal = ThreadLocal.withInitial(ArrayDeque::new);
     }
 
     @Override

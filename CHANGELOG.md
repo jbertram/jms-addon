@@ -1,4 +1,4 @@
-# Version 3.1.0 (2019-12-20)
+# Version 3.1.0 (2019-12-19)
 
 * [new] Support disabling JMS listeners by setting destination type to "DISABLED". This can be substituted with configuration with the `destinationTypeStr` annotation parameter.
 

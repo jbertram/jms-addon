@@ -5,23 +5,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.jms.pollers;
 
-import org.seedstack.jms.spi.MessagePoller;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.seedstack.jms.spi.MessagePoller;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link MessagePoller} implementing a simple polling strategy that waits at most 30 seconds using
@@ -109,12 +109,17 @@ public class SimpleMessagePoller implements MessagePoller, Runnable {
         }
 
         if (active.get()) {
-            LOGGER.warn("Message polling interrupted for JMS listener {}. Scheduling restart in {} ms", messageListener, restartDelay);
+            LOGGER.warn("Message polling interrupted for JMS listener {}. Scheduling restart in {} ms",
+                    messageListener,
+                    restartDelay);
 
             try {
-                timer.schedule(new MyTimerTask(this), restartDelay);
+                timer.schedule(new MyTimerTask(), restartDelay);
             } catch (Exception e) {
-                LOGGER.error("Unable to schedule polling restart for JMS listener {}, consider restarting the poller manually if possible", messageListener);
+                LOGGER.error(
+                        "Unable to schedule polling restart for JMS listener {}, consider restarting the poller " +
+                                "manually if possible",
+                        messageListener);
             }
         } else {
             LOGGER.debug("Stopping to poll messages for JMS listener {}", messageListener, restartDelay);
@@ -128,19 +133,13 @@ public class SimpleMessagePoller implements MessagePoller, Runnable {
     }
 
     private class MyTimerTask extends TimerTask {
-        private final SimpleMessagePoller poller;
-
-        MyTimerTask(SimpleMessagePoller poller) {
-            this.poller = poller;
-        }
-
         @Override
         public void run() {
-            synchronized (poller) {
+            synchronized (SimpleMessagePoller.this) {
                 if (!thread.isAlive()) {
                     startThread();
                 } else {
-                    timer.schedule(new MyTimerTask(poller), restartDelay);
+                    timer.schedule(new MyTimerTask(), restartDelay);
                 }
             }
         }
