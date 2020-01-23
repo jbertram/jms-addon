@@ -5,22 +5,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.jms;
-
-import com.google.inject.Inject;
-import org.assertj.core.api.Assertions;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.seedstack.jms.fixtures.TestSender4;
-
-import javax.jms.JMSException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import org.seedstack.seed.testing.junit4.SeedITRunner;
 
 import static org.junit.Assert.fail;
 
+import com.google.inject.Inject;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import javax.jms.JMSException;
+import org.assertj.core.api.Assertions;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.seedstack.seed.testing.SystemProperty;
+import org.seedstack.seed.testing.junit4.SeedITRunner;
+import senders.TestSender4;
+
 @RunWith(SeedITRunner.class)
+@SystemProperty(name = "seedstack.config.application.basePackages", value = "senders")
 public class JmsPollingIT {
     @Inject
     TestSender4 testSender4;

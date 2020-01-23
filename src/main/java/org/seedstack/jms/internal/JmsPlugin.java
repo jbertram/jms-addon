@@ -75,6 +75,7 @@ public class JmsPlugin extends AbstractSeedPlugin {
     private JmsFactory jmsFactory;
     private Application application;
     private TransactionPlugin transactionPlugin;
+    private JmsConfig jmsConfig;
 
     @Override
     public Collection<Class<?>> dependencies() {
@@ -88,16 +89,18 @@ public class JmsPlugin extends AbstractSeedPlugin {
 
     @Override
     public InitState initialize(InitContext initContext) {
-        transactionPlugin = initContext.dependency(TransactionPlugin.class);
         application = getApplication();
-        JmsConfig jmsConfig = getConfiguration(JmsConfig.class);
-        Map<String, Context> jndiContexts = initContext.dependency(JndiPlugin.class).getJndiContexts();
+        transactionPlugin = initContext.dependency(TransactionPlugin.class);
+        jmsConfig = getConfiguration(JmsConfig.class);
 
-        jmsFactory = new JmsFactoryImpl(getApplication().getId(), jmsConfig, jndiContexts);
-
-        configureConnections(jmsConfig);
-
-        configureMessageListeners(initContext.scannedTypesBySpecification().get(messageListenerSpec));
+        if (jmsConfig.isEnabled()) {
+            Map<String, Context> jndiContexts = initContext.dependency(JndiPlugin.class).getJndiContexts();
+            jmsFactory = new JmsFactoryImpl(getApplication().getId(), jmsConfig, jndiContexts);
+            configureConnections();
+            configureMessageListeners(initContext.scannedTypesBySpecification().get(messageListenerSpec));
+        } else {
+            LOGGER.info("JMS plugin is disabled by configuration");
+        }
 
         return InitState.INITIALIZED;
     }
@@ -144,16 +147,20 @@ public class JmsPlugin extends AbstractSeedPlugin {
 
     @Override
     public Object nativeUnitModule() {
-        return new JmsModule(
-                jmsFactory,
-                connections,
-                connectionDefinitions,
-                messageListenerDefinitions,
-                pollers.values()
-        );
+        if (jmsConfig.isEnabled()) {
+            return new JmsModule(
+                    jmsFactory,
+                    connections,
+                    connectionDefinitions,
+                    messageListenerDefinitions,
+                    pollers.values()
+            );
+        } else {
+            return null;
+        }
     }
 
-    private void configureConnections(JmsConfig jmsConfig) {
+    private void configureConnections() {
         for (Map.Entry<String, JmsConfig.ConnectionConfig> entry : jmsConfig.getConnections().entrySet()) {
             try {
                 ConnectionDefinition connectionDefinition = jmsFactory.createConnectionDefinition(entry.getKey(),

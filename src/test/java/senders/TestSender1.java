@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.seedstack.jms.fixtures;
+package senders;
 
 import javax.inject.Inject;
 import javax.jms.Destination;
@@ -18,16 +18,15 @@ import org.seedstack.seed.Bind;
 import org.seedstack.seed.transaction.Transactional;
 
 @Bind
-public class TestSender4 implements TestSender {
-
+public class TestSender1 {
     @Inject
     private Session session;
 
     @Transactional
-    @JmsConnection("connection4")
+    @JmsConnection("connection1")
     public void send(String stringMessage) throws JMSException {
         // Queue
-        Destination queue = session.createQueue("queue4");
+        Destination queue = session.createQueue("queue1");
         //create Message
         TextMessage message1 = session.createTextMessage();
         message1.setText(stringMessage);
@@ -37,5 +36,5 @@ public class TestSender4 implements TestSender {
         //send Message
         producer.send(message1);
     }
-
 }
+

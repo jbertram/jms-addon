@@ -7,6 +7,16 @@
  */
 package org.seedstack.jms.internal;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.naming.Context;
+import javax.naming.NamingException;
 import jodd.bean.BeanUtil;
 import jodd.bean.BeanUtilBean;
 import org.apache.commons.lang.StringUtils;
@@ -16,17 +26,6 @@ import org.seedstack.jms.spi.JmsFactory;
 import org.seedstack.seed.SeedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Factory to create JMS objects.

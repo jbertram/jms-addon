@@ -21,8 +21,18 @@ import org.seedstack.seed.validation.NotBlank;
 
 @Config("jms")
 public class JmsConfig {
+    private boolean enabled = true;
     private Map<String, ConnectionFactoryConfig> connectionFactories = new HashMap<>();
     private Map<String, ConnectionConfig> connections = new HashMap<>();
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public JmsConfig setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
 
     public Map<String, ConnectionFactoryConfig> getConnectionFactories() {
         return Collections.unmodifiableMap(connectionFactories);

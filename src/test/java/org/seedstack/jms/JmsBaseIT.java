@@ -5,6 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.jms;
 
 import static org.junit.Assert.fail;
@@ -20,12 +21,15 @@ import javax.jms.JMSException;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.seedstack.jms.fixtures.TestSender1;
-import org.seedstack.jms.fixtures.TestSender2;
-import org.seedstack.jms.fixtures.TestSenderErr;
+import org.seedstack.seed.testing.ConfigurationProperty;
+import org.seedstack.seed.testing.SystemProperty;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
+import senders.TestSender1;
+import senders.TestSender2;
+import senders.TestSenderErr;
 
 @RunWith(SeedITRunner.class)
+@SystemProperty(name = "seedstack.config.application.basePackages", value = "senders")
 public class JmsBaseIT {
 
     @Inject

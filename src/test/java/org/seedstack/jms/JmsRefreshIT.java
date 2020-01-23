@@ -5,6 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.jms;
 
 import static org.fest.reflect.core.Reflection.method;
@@ -20,16 +21,18 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.jms.fixtures.TestExceptionListener;
-import org.seedstack.jms.fixtures.TestSender3;
-import org.seedstack.jms.fixtures.TestSender4;
 import org.seedstack.jms.internal.FakeConnectionFactoryImpl;
 import org.seedstack.jms.spi.ConnectionDefinition;
 import org.seedstack.jms.spi.JmsFactory;
 import org.seedstack.seed.Logging;
+import org.seedstack.seed.testing.SystemProperty;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
 import org.slf4j.Logger;
+import senders.TestSender3;
+import senders.TestSender4;
 
 @RunWith(SeedITRunner.class)
+@SystemProperty(name = "seedstack.config.application.basePackages", value = "senders")
 public class JmsRefreshIT {
 
     // TODO <pith> 19/11/2014: improve these tests.
