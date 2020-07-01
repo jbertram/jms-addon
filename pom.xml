@@ -19,10 +19,10 @@
 
     <groupId>org.seedstack.addons.jms</groupId>
     <artifactId>jms</artifactId>
-    <version>3.1.0-SNAPSHOT</version>
+    <version>3.1.1-SNAPSHOT</version>
 
     <properties>
-        <seed.version>3.9.2-SNAPSHOT</seed.version>
+        <seed.version>3.10.0-SNAPSHOT</seed.version>
 
         <compatibility.version>3.0.0</compatibility.version>
 

@@ -7,11 +7,18 @@
  */
 package org.seedstack.jms.internal;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import io.nuun.kernel.api.plugin.context.InitContext;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.function.Predicate;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.Before;
 import org.junit.Test;
-import org.kametic.specifications.Specification;
 import org.mockito.Mockito;
 import org.seedstack.coffig.Coffig;
 import org.seedstack.jms.JmsConfig;
@@ -19,14 +26,6 @@ import org.seedstack.seed.Application;
 import org.seedstack.seed.core.internal.jndi.JndiPlugin;
 import org.seedstack.seed.core.internal.transaction.TransactionPlugin;
 import org.seedstack.seed.spi.ApplicationProvider;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class SeedJMSPluginUnitTest {
     private JmsPlugin underTest = new JmsPlugin();
@@ -78,15 +77,15 @@ public class SeedJMSPluginUnitTest {
         JndiPlugin jndiplugin = mock(JndiPlugin.class);
         when(jndiplugin.getJndiContexts()).thenReturn(new HashMap<>());
 
-        HashMap<Specification, Collection<Class<?>>> map = mock(HashMap.class);
+        HashMap<Predicate<Class<?>>, Collection<Class<?>>> map = mock(HashMap.class);
 
         when(initContext.dependency(ApplicationProvider.class)).thenReturn(applicationProvider);
         when(initContext.dependency(TransactionPlugin.class)).thenReturn(txplugin);
         when(initContext.dependency(JndiPlugin.class)).thenReturn(jndiplugin);
 
-        when(initContext.scannedTypesBySpecification()).thenReturn(map);
+        when(initContext.scannedTypesByPredicate()).thenReturn(map);
 
-        when(map.get(Mockito.any(Specification.class))).thenReturn(Collections.EMPTY_LIST);
+        when(map.get(Mockito.any(Predicate.class))).thenReturn(Collections.EMPTY_LIST);
         return initContext;
 
     }

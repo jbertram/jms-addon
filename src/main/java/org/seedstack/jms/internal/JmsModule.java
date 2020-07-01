@@ -5,27 +5,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.seedstack.jms.internal;
 
+package org.seedstack.jms.internal;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import com.google.inject.util.Providers;
-import org.seedstack.jms.spi.ConnectionDefinition;
-import org.seedstack.jms.spi.JmsExceptionHandler;
-import org.seedstack.jms.spi.MessageListenerDefinition;
-import org.seedstack.jms.spi.MessageListenerInstanceDefinition;
-import org.seedstack.jms.spi.JmsFactory;
-import org.seedstack.jms.spi.MessagePoller;
-import org.seedstack.seed.core.internal.transaction.TransactionalProxy;
-
-import javax.jms.Connection;
-import javax.jms.ExceptionListener;
-import javax.jms.MessageListener;
-import javax.jms.Session;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.ExceptionListener;
+import javax.jms.MessageListener;
+import javax.jms.Session;
+import org.seedstack.jms.spi.ConnectionDefinition;
+import org.seedstack.jms.spi.JmsExceptionHandler;
+import org.seedstack.jms.spi.JmsFactory;
+import org.seedstack.jms.spi.MessageListenerDefinition;
+import org.seedstack.jms.spi.MessageListenerInstanceDefinition;
+import org.seedstack.jms.spi.MessagePoller;
+import org.seedstack.seed.core.internal.transaction.TransactionalProxy;
 
 class JmsModule extends AbstractModule {
     private final JmsFactory jmsFactory;
@@ -34,7 +34,9 @@ class JmsModule extends AbstractModule {
     private final Map<String, ConnectionDefinition> connectionDefinitions;
     private final Collection<MessagePoller> pollers;
 
-    public JmsModule(JmsFactory jmsFactory, ConcurrentMap<String, Connection> connections, ConcurrentMap<String, ConnectionDefinition> connectionDefinitions, Map<String, MessageListenerDefinition> messageListenerDefinitions, Collection<MessagePoller> pollers) {
+    public JmsModule(JmsFactory jmsFactory, ConcurrentMap<String, Connection> connections,
+            ConcurrentMap<String, ConnectionDefinition> connectionDefinitions,
+            Map<String, MessageListenerDefinition> messageListenerDefinitions, Collection<MessagePoller> pollers) {
         this.jmsFactory = jmsFactory;
         this.connections = connections;
         this.connectionDefinitions = connectionDefinitions;
@@ -53,17 +55,11 @@ class JmsModule extends AbstractModule {
         JmsSessionLink jmsSessionLink = new JmsSessionLink();
         bind(Session.class).toInstance(TransactionalProxy.create(Session.class, jmsSessionLink));
 
-        for (Map.Entry<String, Connection> entry : connections.entrySet()) {
-            bindConnection(connectionDefinitions.get(entry.getKey()), entry.getValue(), jmsSessionLink);
-        }
-
-        for (Map.Entry<String, MessageListenerDefinition> entry : messageListenerDefinitions.entrySet()) {
-            bindMessageListener(entry.getValue());
-        }
-
-        for (MessagePoller poller : pollers) {
-            requestInjection(poller);
-        }
+        jmsFactory.getConnectionFactories()
+                .forEach((name, cf) -> bind(ConnectionFactory.class).annotatedWith(Names.named(name)).toInstance(cf));
+        connections.forEach((key, value) -> bindConnection(connectionDefinitions.get(key), value, jmsSessionLink));
+        messageListenerDefinitions.forEach((key, value) -> bindMessageListener(value));
+        pollers.forEach(this::requestInjection);
     }
 
     private void bindMessageListener(MessageListenerDefinition messageListenerDefinition) {
@@ -74,18 +70,21 @@ class JmsModule extends AbstractModule {
                 .toInstance(new JmsListenerTransactionHandler(messageListenerDefinition.getSession()));
 
         if (messageListenerDefinition instanceof MessageListenerInstanceDefinition) {
-            MessageListener messageListener = ((MessageListenerInstanceDefinition) messageListenerDefinition).getMessageListener();
+            MessageListener messageListener =
+                    ((MessageListenerInstanceDefinition) messageListenerDefinition).getMessageListener();
             bind(MessageListener.class).annotatedWith(Names.named(name)).toInstance(messageListener);
         } else {
-            bind(MessageListener.class).annotatedWith(Names.named(name)).to(messageListenerDefinition.getMessageListenerClass());
+            bind(MessageListener.class).annotatedWith(Names.named(name))
+                    .to(messageListenerDefinition.getMessageListenerClass());
         }
     }
 
-
-    private void bindConnection(ConnectionDefinition connectionDefinition, Connection connection, JmsSessionLink jmsSessionLink) {
+    private void bindConnection(ConnectionDefinition connectionDefinition, Connection connection,
+            JmsSessionLink jmsSessionLink) {
         String name = connectionDefinition.getName();
 
-        Class<? extends JmsExceptionHandler> jmsExceptionHandlerClass = connectionDefinition.getJmsExceptionHandlerClass();
+        Class<? extends JmsExceptionHandler> jmsExceptionHandlerClass =
+                connectionDefinition.getJmsExceptionHandlerClass();
         if (jmsExceptionHandlerClass != null) {
             bind(JmsExceptionHandler.class).annotatedWith(Names.named(name)).to(jmsExceptionHandlerClass);
         } else {
@@ -93,7 +92,8 @@ class JmsModule extends AbstractModule {
         }
 
         if (connectionDefinition.getExceptionListenerClass() != null) {
-            bind(ExceptionListener.class).annotatedWith(Names.named(name)).to(connectionDefinition.getExceptionListenerClass());
+            bind(ExceptionListener.class).annotatedWith(Names.named(name))
+                    .to(connectionDefinition.getExceptionListenerClass());
         }
 
         bind(Connection.class).annotatedWith(Names.named(name)).toInstance(connection);

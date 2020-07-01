@@ -9,7 +9,10 @@
 package org.seedstack.jms.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.seedstack.shed.reflect.AnnotationPredicates.elementAnnotatedWith;
+import static org.seedstack.shed.reflect.ClassPredicates.classImplements;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.nuun.kernel.api.plugin.InitState;
 import io.nuun.kernel.api.plugin.context.InitContext;
@@ -19,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
@@ -28,8 +32,6 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 import javax.naming.Context;
-import org.apache.commons.lang.StringUtils;
-import org.kametic.specifications.Specification;
 import org.seedstack.jms.DestinationType;
 import org.seedstack.jms.JmsConfig;
 import org.seedstack.jms.JmsMessageListener;
@@ -57,11 +59,10 @@ public class JmsPlugin extends AbstractSeedPlugin {
     private static final String ERROR_MESSAGE_LISTENER_NAME = "messageListenerName";
     private static final String ERROR_DESTINATION_TYPE = "destinationType";
 
-    @SuppressWarnings("unchecked")
-    private final Specification<Class<?>> messageListenerSpec = and(classImplements(MessageListener.class),
-            classAnnotatedWith(JmsMessageListener.class));
-    private final Specification<Class<?>> exceptionListenerSpec = classImplements(ExceptionListener.class);
-    private final Specification<Class<?>> exceptionHandlerSpec = classImplements(JmsExceptionHandler.class);
+    private final Predicate<Class<?>> messageListenerSpec = classImplements(MessageListener.class).and(
+            elementAnnotatedWith(JmsMessageListener.class, true));
+    private final Predicate<Class<?>> exceptionListenerSpec = classImplements(ExceptionListener.class);
+    private final Predicate<Class<?>> exceptionHandlerSpec = classImplements(JmsExceptionHandler.class);
 
     private final ConcurrentMap<String, MessageListenerDefinition> messageListenerDefinitions =
             new ConcurrentHashMap<>();
@@ -97,7 +98,7 @@ public class JmsPlugin extends AbstractSeedPlugin {
             Map<String, Context> jndiContexts = initContext.dependency(JndiPlugin.class).getJndiContexts();
             jmsFactory = new JmsFactoryImpl(getApplication().getId(), jmsConfig, jndiContexts);
             configureConnections();
-            configureMessageListeners(initContext.scannedTypesBySpecification().get(messageListenerSpec));
+            configureMessageListeners(initContext.scannedTypesByPredicate().get(messageListenerSpec));
         } else {
             LOGGER.info("JMS plugin is disabled by configuration");
         }
@@ -139,9 +140,9 @@ public class JmsPlugin extends AbstractSeedPlugin {
     @Override
     public Collection<ClasspathScanRequest> classpathScanRequests() {
         return classpathScanRequestBuilder()
-                .specification(messageListenerSpec)
-                .specification(exceptionListenerSpec)
-                .specification(exceptionHandlerSpec)
+                .predicate(messageListenerSpec)
+                .predicate(exceptionListenerSpec)
+                .predicate(exceptionHandlerSpec)
                 .build();
     }
 
@@ -278,7 +279,7 @@ public class JmsPlugin extends AbstractSeedPlugin {
         MessageConsumer consumer;
         Session session = messageListenerDefinition.getSession();
 
-        if (StringUtils.isNotBlank(messageListenerDefinition.getSelector())) {
+        if (!Strings.isNullOrEmpty(messageListenerDefinition.getSelector())) {
             consumer = session.createConsumer(messageListenerDefinition.getDestination(),
                     messageListenerDefinition.getSelector());
         } else {

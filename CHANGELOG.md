@@ -1,3 +1,7 @@
+# Version 3.1.1 (2019-07-31)
+
+* [new] Make connection factories injectable with their name as qualifier: `@Named("myCf")`.
+
 # Version 3.1.0 (2019-12-19)
 
 * [new] Support disabling JMS listeners by setting destination type to "DISABLED". This can be substituted with configuration with the `destinationTypeStr` annotation parameter.
