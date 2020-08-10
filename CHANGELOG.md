@@ -1,4 +1,4 @@
-# Version 3.1.1 (2019-07-31)
+# Version 3.1.1 (2020-08-10)
 
 * [new] Make connection factories injectable with their name as qualifier: `@Named("myCf")`.
 
