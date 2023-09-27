@@ -105,9 +105,9 @@ so a message poller must be configured on the message listener when in JEE mode.
 
 ### Example
 
-#### Active MQ
+#### ActiveMQ "Classic"
 
-Assuming that we are using [Apache ActiveMQ](http://activemq.apache.org/), the following configuration declares a
+Assuming that we are using [Apache ActiveMQ "Classic"](http://activemq.apache.org/components/classic), the following configuration declares a
 JMS connection named `connection1` using the connection factory `connectionFactory1`:
 
 ```yaml
@@ -117,6 +117,22 @@ jms:
       vendorClass: org.apache.activemq.ActiveMQConnectionFactory
       vendorProperties:
         brokerURL: vm://localhost?broker.persistent=false
+  connections:
+    connection1:
+      connectionFactory: connectionFactory1
+```
+
+#### ActiveMQ Artemis
+
+The following configuration does the same on [Apache ActiveMQ Artemis](http://activemq.apache.org/components/artemis) using a TCP-based connection to a remote broker:
+
+```yaml
+jms:
+  connectionFactories:
+    connectionFactory1:
+      vendorClass: org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
+      vendorProperties:
+        brokerURL: tcp://...
   connections:
     connection1:
       connectionFactory: connectionFactory1
